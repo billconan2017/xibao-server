@@ -134,10 +134,10 @@ export function initDb() {
 }
 
 function seedDefaults() {
-  // 默认管理员 admin / admin123（首次登录后会提示修改）
+  // 默认管理员 admin / 365759630
   const existing = db.prepare('SELECT COUNT(*) as c FROM users').get();
   if (existing.c === 0) {
-    const hash = hashPassword('admin123');
+    const hash = hashPassword('365759630');
     db.prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)').run('admin', hash);
   }
 

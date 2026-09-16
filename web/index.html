@@ -9,99 +9,117 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
   --bg: #0f1115; --bg2: #1a1d24; --card: #1f232c; --border: #2a2f3a;
-  --text: #e6e8eb; --text2: #9aa0ab; --accent: #ff6b35; --accent2: #4f8cff; --green: #2ecc71;
+  --text: #e6e8eb; --text2: #9aa0ab; --accent: #ff6b35; --accent2: #4f8cff;
+  --green: #2ecc71;
 }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background: var(--bg); color: var(--text); min-height: 100vh;
+  background: var(--bg); color: var(--text);
+  min-height: 100vh;
   background: radial-gradient(ellipse at top, #1a1d24 0%, #0f1115 60%);
 }
-.nav {
+.topbar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 24px; border-bottom: 1px solid var(--border);
-  position: sticky; top: 0; background: rgba(15,17,21,0.9); backdrop-filter: blur(8px); z-index: 10;
+  padding: 16px 32px; border-bottom: 1px solid var(--border);
+  background: rgba(15,17,21,0.92); backdrop-filter: blur(8px);
+  position: sticky; top: 0; z-index: 10;
 }
-.nav .brand { font-size: 18px; font-weight: 700; }
-.nav .brand span { color: var(--accent); }
-.nav .links { display: flex; gap: 16px; align-items: center; }
-.nav .links a {
+.topbar .brand { font-size: 20px; font-weight: 700; }
+.topbar .brand span { color: var(--accent); }
+.topbar nav { display: flex; gap: 8px; align-items: center; }
+.topbar nav a {
   color: var(--text2); text-decoration: none; font-size: 14px;
-  padding: 7px 14px; border-radius: 8px; transition: all .15s;
+  padding: 8px 16px; border-radius: 8px; transition: all .15s;
 }
-.nav .links a:hover { color: var(--text); background: var(--card); }
-.nav .links a.admin { background: var(--accent); color: #fff; font-weight: 600; }
-.hero { text-align: center; padding: 60px 24px 40px; }
-.hero h1 { font-size: 40px; font-weight: 700; margin-bottom: 8px; }
+.topbar nav a:hover { color: var(--text); background: var(--card); }
+.topbar nav a.admin { background: var(--accent); color: #fff; font-weight: 600; }
+
+.hero {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 80px 24px 40px; text-align: center;
+}
+.hero h1 { font-size: 48px; font-weight: 700; margin-bottom: 12px; }
 .hero h1 span { color: var(--accent); }
-.hero p { color: var(--text2); font-size: 16px; margin-bottom: 32px; }
-.download-card {
+.hero .sub { color: var(--text2); font-size: 18px; margin-bottom: 40px; max-width: 500px; }
+.hero .dl-card {
   background: var(--card); border: 1px solid var(--border); border-radius: 20px;
-  max-width: 520px; margin: 0 auto; padding: 40px 32px;
+  padding: 48px 40px; max-width: 480px; width: 100%;
 }
-.dl-btn {
-  display: flex; align-items: center; gap: 10px; justify-content: center;
-  padding: 18px; background: var(--accent); color: #fff; border-radius: 14px;
-  font-size: 18px; font-weight: 700; text-decoration: none; margin-bottom: 24px;
+.hero .dl-btn {
+  display: flex; align-items: center; gap: 12px; justify-content: center;
+  padding: 20px; background: var(--accent); color: #fff; border-radius: 14px;
+  font-size: 20px; font-weight: 700; text-decoration: none; margin-bottom: 28px;
   transition: opacity .15s;
 }
-.dl-btn:hover { opacity: .88; }
-.qr { display: flex; align-items: center; gap: 24px; justify-content: center; margin-bottom: 20px; }
-.qr .qrcode { width: 140px; height: 140px; background: #fff; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
-.qr .qrcode img { width: 130px; height: 130px; }
-.steps { text-align: left; font-size: 14px; color: var(--text2); line-height: 2; }
-.steps b { color: var(--text); }
-.steps .num {
+.hero .dl-btn:hover { opacity: .88; }
+.hero .steps { text-align: left; font-size: 14px; color: var(--text2); line-height: 2.2; }
+.hero .steps b { color: var(--text); }
+.hero .steps .num {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff;
-  font-size: 12px; margin-right: 8px;
+  width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff;
+  font-size: 12px; margin-right: 10px;
 }
+
 .features {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px; max-width: 900px; margin: 48px auto 40px; padding: 0 24px;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px; max-width: 1060px; margin: 0 auto; padding: 0 24px 60px;
 }
 .feat {
-  background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 24px;
+  background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 28px;
+  transition: border-color .2s;
 }
-.feat .ico { font-size: 28px; margin-bottom: 10px; }
+.feat:hover { border-color: var(--accent); }
+.feat .ico { font-size: 32px; margin-bottom: 12px; }
 .feat h3 { font-size: 16px; margin-bottom: 6px; }
 .feat p { font-size: 13px; color: var(--text2); line-height: 1.6; }
-.footer { text-align: center; padding: 24px; color: var(--text2); font-size: 12px; border-top: 1px solid var(--border); }
+
+.footer {
+  text-align: center; padding: 32px; color: var(--text2); font-size: 13px;
+  border-top: 1px solid var(--border); background: var(--bg2);
+}
 .footer a { color: var(--accent2); text-decoration: none; }
+.footer .sep { margin: 0 8px; color: var(--border); }
 </style>
 </head>
 <body>
 <div id="app">
-  <div class="nav">
+  <div class="topbar">
     <div class="brand">📺 喜宝<span>IPTV</span></div>
-    <div class="links">
-      <a href="#download">下载 APK</a>
-      <a href="#features">功能</a>
+    <nav>
+      <a href="#features">功能介绍</a>
+      <a href="/login">登录</a>
       <a href="/admin" class="admin">管理后台</a>
-    </div>
+    </nav>
   </div>
 
-  <div class="hero" id="download">
+  <div class="hero">
     <h1>📺 喜宝<span>IPTV</span></h1>
-    <p>自建 IPTV 播放器 · 手机 / 电视 / 盒子通用</p>
-    <div class="download-card">
+    <p class="sub">{{ siteName }} — 自建 IPTV 管理平台，手机电视盒子通用</p>
+    <div class="dl-card">
       <a class="dl-btn" :href="apkUrl" download>⬇️ 下载 APK</a>
       <div class="steps">
-        <div><span class="num">1</span>下载并安装 <b>{{ apkName }}</b></div>
-        <div><span class="num">2</span>打开 APP，输入后端地址</div>
+        <div><span class="num">1</span>下载 APK 到手机 / 电视</div>
+        <div><span class="num">2</span>安装后输入服务器地址</div>
         <div><span class="num">3</span>选择频道，开始观看</div>
       </div>
     </div>
   </div>
 
   <div class="features" id="features">
-    <div class="feat"><div class="ico">📡</div><h3>多源导入</h3><p>粘贴任意 M3U 直播源，一键拉取合并去重</p></div>
-    <div class="feat"><div class="ico">🗂️</div><h3>频道管理</h3><p>分组、台标、启停、排序，全在网页后台</p></div>
-    <div class="feat"><div class="ico">📺</div><h3>EPG 节目单</h3><p>支持 XMLTV 源，自动匹配频道显示节目预告</p></div>
-    <div class="feat"><div class="ico">🔒</div><h3>完全自建</h3><p>数据在你自己服务器，不依赖第三方</p></div>
+    <div class="feat"><div class="ico">📡</div><h3>多源导入</h3><p>粘贴任意 M3U 直播源，一键合并去重，支持多源管理</p></div>
+    <div class="feat"><div class="ico">🗂️</div><h3>频道管理</h3><p>分组、台标、启停、排序，全在网页后台操作</p></div>
+    <div class="feat"><div class="ico">📅</div><h3>EPG 节目单</h3><p>XMLTV 源对接，自动匹配频道，显示实时节目预告</p></div>
+    <div class="feat"><div class="ico">🎬</div><h3>点播管理</h3><p>支持资源库接口接入，点播内容管理</p></div>
+    <div class="feat"><div class="ico">💳</div><h3>套餐授权</h3><p>套餐绑定频道分组，设备授权与到期管理</p></div>
+    <div class="feat"><div class="ico">🔒</div><h3>完全自建</h3><p>数据和播放不依赖第三方，服务器在你自己手里</p></div>
   </div>
 
   <div class="footer">
-    © <span id="year"></span> {{ siteName }} · <a href="/admin">管理后台</a>
+    © {{ year }} {{ siteName }}
+    <span class="sep">·</span>
+    <a href="/login">登录</a>
+    <span class="sep">·</span>
+    <a href="/admin">管理后台</a>
   </div>
 </div>
 
@@ -109,25 +127,20 @@ body {
 const { createApp } = Vue;
 createApp({
   data() {
-    return { siteName: '喜宝IPTV', apkUrl: '', apkName: '喜宝IPTV.apk' };
+    return { siteName: '喜宝IPTV', apkUrl: '', year: '2026' };
   },
   async mounted() {
-    document.getElementById('year').textContent = new Date().getFullYear();
+    this.year = String(new Date().getFullYear());
     try {
       const res = await fetch('/api/settings');
       const json = await res.json();
       if (json.code === 0 && json.data) {
         this.siteName = json.data.site_name || '喜宝IPTV';
-        if (json.data.apk_url) {
-          this.apkUrl = json.data.apk_url;
-          this.apkName = json.data.apk_url.split('/').pop();
-        }
+        if (json.data.apk_url) this.apkUrl = json.data.apk_url;
       }
     } catch (e) {}
-    // 默认 APK 地址（GitHub Release 直链）
     if (!this.apkUrl) {
       this.apkUrl = 'https://github.com/billconan2017/xibao-iptv/releases/latest/download/xibao-iptv-v1.0.1.apk';
-      this.apkName = '喜宝IPTV.apk';
     }
   },
 }).mount('#app');

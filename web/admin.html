@@ -499,12 +499,16 @@ pre.code { background: var(--bg2); padding: 16px; border-radius: 8px; font-size:
           <button class="btn btn-primary" @click="saveSettings">保存设置</button>
         </div>
         <div class="card">
-          <h3>修改密码</h3>
+          <h3>账号设置</h3>
           <div class="form-row">
-            <input v-model="pwd.old" type="password" placeholder="原密码">
-            <input v-model="pwd.new1" type="password" placeholder="新密码 (至少6位)">
-            <input v-model="pwd.new2" type="password" placeholder="确认新密码">
-            <button class="btn btn-primary" @click="changePwd">修改密码</button>
+            <label>用户名：</label>
+            <input v-model="profile.username" style="width:200px">
+          </div>
+          <div class="form-row">
+            <input v-model="profile.old_pwd" type="password" placeholder="原密码">
+            <input v-model="profile.new_pwd1" type="password" placeholder="新密码 (至少6位，留空不改)">
+            <input v-model="profile.new_pwd2" type="password" placeholder="确认新密码">
+            <button class="btn btn-primary" @click="saveProfile">保存</button>
           </div>
         </div>
       </div>
@@ -538,7 +542,7 @@ createApp({
       rssMeal: null, rssUrl: '',
       deviceSearch: '', checkAll: false, selectedDevices: [], batchMeal: '', batchDays: 30,
       settings: { site_name: '喜宝IPTV', apk_url: '' },
-      pwd: { old: '', new1: '', new2: '' },
+      profile: { username: '', old_pwd: '', new_pwd1: '', new_pwd2: '' },
       search: '', filterGroup: '',
       syncing: false, epgSyncing: false,
       toast: '', toastError: false, m3uPreview: '',
@@ -595,6 +599,8 @@ createApp({
         this.unauthorized = await this.api('/api/devices/unauthorized') || [];
         const s = await this.api('/api/settings');
         if (s) this.settings = s;
+        const me = await this.api('/api/auth/me');
+        if (me) this.profile.username = me.username;
         const cc = await this.api('/api/client/config');
         if (cc) this.clientCfg = cc;
         const n = await this.api('/api/notice');
@@ -738,12 +744,19 @@ createApp({
       try { await this.api('/api/settings', { method: 'POST', body: JSON.stringify(this.settings) }); this.showToast('已保存'); }
       catch (e) { this.showToast(e.message, true); }
     },
-    async changePwd() {
-      if (this.pwd.new1 !== this.pwd.new2) return this.showToast('两次密码不一致', true);
-      if (this.pwd.new1.length < 6) return this.showToast('新密码至少 6 位', true);
+    async saveProfile() {
+      if (this.profile.new_pwd1 && this.profile.new_pwd1 !== this.profile.new_pwd2) return this.showToast('两次密码不一致', true);
+      if (this.profile.new_pwd1 && this.profile.new_pwd1.length < 6) return this.showToast('新密码至少 6 位', true);
       try {
-        await this.api('/api/auth/password', { method: 'POST', body: JSON.stringify({ old_password: this.pwd.old, new_password: this.pwd.new1 }) });
-        this.pwd = { old: '', new1: '', new2: '' }; this.showToast('密码已修改');
+        await this.api('/api/auth/profile', { method: 'POST', body: JSON.stringify({
+          username: this.profile.username,
+          old_password: this.profile.old_pwd,
+          new_password: this.profile.new_pwd1 || undefined,
+        }) });
+        this.profile.old_pwd = ''; this.profile.new_pwd1 = ''; this.profile.new_pwd2 = '';
+        this.username = this.profile.username;
+        await this.loadAll();
+        this.showToast('已保存');
       } catch (e) { this.showToast(e.message, true); }
     },
     async logout() {

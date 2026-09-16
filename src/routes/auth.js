@@ -41,22 +41,27 @@ router.get('/auth/me', requireAuth, (req, res) => {
   res.json({ code: 0, data: { id: req.user.id, username: req.user.username } });
 });
 
-// 修改密码
-router.post('/auth/password', requireAuth, (req, res) => {
-  const { old_password, new_password } = req.body || {};
-  if (!old_password || !new_password) {
-    return res.status(400).json({ code: 1, msg: '参数缺失' });
-  }
-  if (new_password.length < 6) {
-    return res.status(400).json({ code: 1, msg: '新密码至少 6 位' });
-  }
+// 修改账号信息（用户名/密码）
+router.post('/auth/profile', requireAuth, (req, res) => {
+  const { username, old_password, new_password } = req.body || {};
   const db = getDb();
   const user = db.prepare('SELECT * FROM users WHERE id=?').get(req.user.id);
-  if (!verifyPassword(old_password, user.password_hash)) {
-    return res.status(401).json({ code: 1, msg: '原密码错误' });
+
+  if (username && username !== user.username) {
+    // 检查新用户名是否已被占用
+    const existing = db.prepare('SELECT id FROM users WHERE username=? AND id!=?').get(username, req.user.id);
+    if (existing) return res.status(400).json({ code: 1, msg: '该用户名已被使用' });
+    db.prepare('UPDATE users SET username=? WHERE id=?').run(username, req.user.id);
   }
-  db.prepare('UPDATE users SET password_hash=? WHERE id=?').run(hashPassword(new_password), req.user.id);
-  res.json({ code: 0, msg: '密码已修改' });
+
+  if (new_password) {
+    if (!old_password) return res.status(400).json({ code: 1, msg: '修改密码需提供原密码' });
+    if (new_password.length < 6) return res.status(400).json({ code: 1, msg: '新密码至少 6 位' });
+    if (!verifyPassword(old_password, user.password_hash)) return res.status(401).json({ code: 1, msg: '原密码错误' });
+    db.prepare('UPDATE users SET password_hash=? WHERE id=?').run(hashPassword(new_password), req.user.id);
+  }
+
+  res.json({ code: 0, msg: '已保存' });
 });
 
 export default router;
