@@ -174,40 +174,46 @@ router.delete('/sources/:id', requireAuth, (req, res) => {
 
 // ============ 同步 ============
 
-// 触发全量同步：拉所有源 → 合并去重 → 入库
+// 触发全量同步：拉所有 URL 源 → 合并去重 → 入库（上传的 file 源不参与，直接保留）
 router.post('/sync', requireAuth, async (req, res) => {
   const db = getDb();
-  const sources = db.prepare('SELECT * FROM sources WHERE enabled=1').all();
+  const allSources = db.prepare('SELECT * FROM sources WHERE enabled=1').all();
+
+  // 只同步 URL 类型的源，跳过上传的 file 源
+  const urlSources = allSources.filter(s => s.type !== 'upload');
 
   try {
-    const merged = await syncAllSources(sources);
-    // 更新 sources 状态
+    const merged = await syncAllSources(urlSources);
+
+    // 更新 URL 源状态
     const updateSrc = db.prepare(
       'UPDATE sources SET channel_count=?, status=?, last_sync=? WHERE id=?'
     );
-    for (const s of sources) {
+    for (const s of urlSources) {
       updateSrc.run(s.channel_count || 0, s.status || 'ok', s.last_sync || 0, s.id);
     }
 
-    // 清空并重建 channels（全量替换）
-    const clearCh = db.prepare('DELETE FROM channels');
+    // 只清除 URL 源导入的频道（source_id != upload 源），保留上传导入的频道
+    const uploadIds = allSources.filter(s => s.type === 'upload').map(s => s.id);
+    const clearCh = db.prepare('DELETE FROM channels WHERE source_id NOT IN (SELECT id FROM sources WHERE type=\'upload\')');
     const insertCh = db.prepare(
-      `INSERT INTO channels (name, url, group_name, tvg_id, tvg_logo, tvg_name, sort_order)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO channels (name, url, group_name, tvg_id, tvg_logo, tvg_name, source_id, sort_order)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     );
+
     db.exec('BEGIN');
     try {
       clearCh.run();
-      for (const ch of merged) {
-        insertCh.run(ch.name, ch.url, ch.group_name, ch.tvg_id, ch.tvg_logo, ch.tvg_name, ch.sort_order);
-      }
+      merged.forEach((ch, i) => {
+        insertCh.run(ch.name, ch.url, ch.group_name, ch.tvg_id, ch.tvg_logo, ch.tvg_name, 0, i);
+      });
       db.exec('COMMIT');
     } catch (e) {
       db.exec('ROLLBACK');
       throw e;
     }
 
-    res.json({ code: 0, data: { count: merged.length } });
+    res.json({ code: 0, data: { count: merged.length, skippedUpload: uploadIds.length } });
   } catch (e) {
     res.status(500).json({ code: 1, msg: String(e.message || e) });
   }
