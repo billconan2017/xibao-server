@@ -1,6 +1,6 @@
 {
   "name": "xibao-server",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "喜宝 IPTV 管理平台（直播源、EPG、套餐与设备授权）",
   "main": "src/server.js",
   "type": "module",

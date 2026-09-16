@@ -26,28 +26,26 @@
     </div>
 
     <!-- 内容 -->
-    <main class="main">
+    <main class="main" :data-page="tab">
       <header class="studio-top"><button class="mobile-menu" @click="menuOpen=!menuOpen" aria-label="打开导航">☰</button><div class="crumb">工作空间 / <strong>{{ pageTitle }}</strong></div><div class="top-actions"><span class="version-chip">{{ updateInfo.version || '管理平台' }}</span><a class="btn btn-ghost" href="/" target="_blank">客户端入口 ↗</a><button class="btn btn-ghost" @click="loadAll">刷新数据</button></div></header>
-      <section v-if="tab==='dashboard'">
-        <div class="welcome"><div><div class="eyebrow">YOUR FAMILY TV</div><h2>打开电视，就是熟悉的频道。</h2><p>整理家里的直播源和频道，让父母少按几次遥控器。</p></div><button class="btn btn-primary" @click="navigate('sources')">＋ 导入直播源</button></div>
+      <section class="workspace-page" v-if="tab==='dashboard'">
+        <div class="page-header dashboard-heading"><div><h2>家庭电视概览</h2><p>直播源、家庭设备与节目单</p></div><button class="btn btn-primary" @click="navigate('sources')">导入直播源</button></div>
         <div class="stats">
-          <div class="stat"><span class="stat-icon">▤</span><div class="label">频道库</div><div class="num">{{ channels.length }}</div><div class="stat-foot">{{ enabledCount }} 个启用 · {{ groups.length }} 个分组</div></div>
-          <div class="stat"><span class="stat-icon">⌁</span><div class="label">直播源</div><div class="num">{{ sources.length }}</div><div class="stat-foot">{{ sources.filter(s=>s.status==='error').length }} 个同步异常</div></div>
-          <div class="stat"><span class="stat-icon">▣</span><div class="label">家庭设备</div><div class="num">{{ devices.length + unauthorized.length }}</div><div class="stat-foot">{{ clientCfg.needauthor==='1' ? unauthorized.length+' 台等待授权' : '家庭模式 · 无需授权' }}</div></div>
-          <div class="stat"><span class="stat-icon">◷</span><div class="label">节目单源</div><div class="num">{{ epgs.length }}</div><div class="stat-foot">XMLTV 节目预告</div></div>
+          <div class="stat"><div class="label">可用频道</div><div class="num">{{ enabledCount }}</div><small>{{ groups.length }} 个分组</small></div>
+          <div class="stat"><div class="label">直播源</div><div class="num">{{ sources.length }}</div><small>{{ sources.filter(s=>s.status==='error').length }} 个异常</small></div>
+          <div class="stat"><div class="label">家庭设备</div><div class="num">{{ devices.length+unauthorized.length }}</div><small>{{ unauthorized.length }} 台待授权</small></div>
+          <div class="stat"><div class="label">节目单源</div><div class="num">{{ epgs.length }}</div><small>XMLTV 节目预告</small></div>
         </div>
-        <div class="dashboard-grid"><div>
-          <div class="card"><div class="section-heading"><h3>常用操作</h3><span class="eyebrow">QUICK ACTIONS</span></div><div class="quick-grid"><button class="quick-action" @click="navigate('channels')"><strong>管理频道 →</strong><span>分组、搜索与上下架</span></button><button class="quick-action" @click="navigate('devices')"><strong>家庭设备 →</strong><span>查看手机与电视盒子</span></button><button class="quick-action" @click="navigate('client')"><strong>连接客户端 →</strong><span>服务器与 APK 下载地址</span></button></div></div>
-          <div class="card"><div class="section-heading"><h3>频道分布</h3><button class="text-button" @click="navigate('channels')">全部频道 →</button></div><div v-for="g in groups.slice(0,8)" class="group-meter"><span>{{ g.group_name }}</span><div class="meter-track"><i :style="{width:Math.max(3,g.count/Math.max(channels.length,1)*100)+'%'}"></i></div><b>{{ g.count }}</b></div><div class="overview-empty" v-if="!groups.length">频道库还是空的。导入 M3U / TXT 直播源后，这里会显示频道分组。</div></div>
-          <div class="card"><div class="section-heading"><h3>直播源状态</h3><button class="text-button" @click="navigate('sources')">管理直播源 →</button></div><div class="activity-row" v-for="s in sources.slice(0,5)"><span class="check-bullet" :class="{done:s.status==='ok'}">⌁</span><div class="grow"><strong>{{ s.name || '未命名源' }}</strong><small>{{ s.last_sync ? '最近同步 '+fmtTime(s.last_sync) : '尚未同步' }}</small></div><span class="tag" :class="s.status==='ok'?'tag-green':s.status==='error'?'tag-red':'tag-gray'">{{ s.status==='ok'?'已同步':s.status==='error'?'同步失败':'待同步' }}</span></div><div v-if="!sources.length" class="overview-empty">添加直播源，开始建立你的频道库。</div></div>
-        </div><div>
-          <div class="card"><div class="section-heading"><h3>部署检查清单</h3><span class="tag tag-gray">{{ setupSteps.filter(s=>s.done).length }} / 4</span></div><div class="check-row" v-for="(step,i) in setupSteps"><span class="check-bullet" :class="{done:step.done}">{{ step.done?'✓':i+1 }}</span><div class="grow"><strong>{{ step.title }}</strong><small>{{ step.hint }}</small></div><button class="text-button" @click="navigate(step.tab)">查看</button></div></div>
-          <div class="card"><div class="eyebrow">PHONE & TV</div><h3>一个 APK，连接两种屏幕</h3><p class="wizard-note">安卓手机使用触屏；Android TV 使用遥控器。先确认服务器地址可访问，再下载安装包。</p><button class="btn btn-primary" @click="navigate('client')">配置客户端 →</button></div>
-        </div></div>
+        <div class="quick-grid"><button class="quick-action" @click="navigate('channels')"><strong>频道管理 →</strong></button><button class="quick-action" @click="navigate('devices')"><strong>设备授权 →</strong></button><button class="quick-action" @click="navigate('client')"><strong>客户端配置 →</strong></button></div>
+        <div class="dashboard-panels">
+          <div class="card"><div class="section-heading"><h3>直播源状态</h3><button class="text-button" @click="navigate('sources')">全部 →</button></div><div class="panel-scroll"><div class="activity-row" v-for="source in sources"><span class="check-bullet" :class="{done:source.status==='ok'}">⌁</span><div class="grow"><strong>{{ source.name || '未命名源' }}</strong><small>{{ source.channel_count || 0 }} 个频道</small></div><span class="tag" :class="source.status==='ok'?'tag-green':'tag-gray'">{{ source.status==='ok'?'正常':'待检查' }}</span></div><div v-if="!sources.length" class="empty">尚未添加直播源</div></div></div>
+          <div class="card"><div class="section-heading"><h3>配置进度</h3><span class="tag tag-gray">{{ setupSteps.filter(s=>s.done).length }} / 4</span></div><div class="panel-scroll"><div class="check-row" v-for="(step,i) in setupSteps"><span class="check-bullet" :class="{done:step.done}">{{ step.done?'✓':i+1 }}</span><div class="grow"><strong>{{ step.title }}</strong><small>{{ step.hint }}</small></div><button class="text-button" @click="navigate(step.tab)">查看</button></div></div></div>
+          <div class="card distribution-card"><div class="section-heading"><h3>频道分布</h3><button class="text-button" @click="navigate('channels')">全部 →</button></div><div class="panel-scroll distribution-grid"><div v-for="g in groups" class="group-meter"><span>{{ g.group_name }}</span><div class="meter-track"><i :style="{width:Math.max(3,g.count/Math.max(channels.length,1)*100)+'%'}"></i></div><b>{{ g.count }}</b></div><div v-if="!groups.length" class="empty">导入直播源后显示分组</div></div></div>
+        </div>
       </section>
 
       <!-- 频道管理 -->
-      <div v-if="tab==='channels'">
+      <div class="workspace-page" v-if="tab==='channels'">
         <div class="page-header"><h2>频道管理</h2><p>增删改查、分组、台标、启停</p></div>
         <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
@@ -82,7 +80,7 @@
             <span class="group-pill" :class="{active:!filterGroup}" @click="filterGroup=''">全部</span>
             <span class="group-pill" v-for="g in groups" :class="{active:filterGroup===g.group_name}" @click="filterGroup=g.group_name">{{ g.group_name }} ({{ g.count }})</span>
           </div>
-          <table v-if="filteredChannels.length">
+          <div class="table-scroll" v-if="filteredChannels.length"><table>
             <thead><tr><th style="width:44px"></th><th>频道</th><th>分组</th><th>流地址</th><th style="width:90px">状态</th><th style="width:150px">操作</th></tr></thead>
             <tbody>
               <tr v-for="ch in filteredChannels" :key="ch.id">
@@ -98,13 +96,13 @@
                 </td>
               </tr>
             </tbody>
-          </table>
+          </table></div>
           <div class="empty" v-else>暂无频道</div>
         </div>
       </div>
 
       <!-- 直播源 -->
-      <div v-if="tab==='sources'">
+      <div class="workspace-page" v-if="tab==='sources'">
         <div class="page-header"><h2>直播源管理</h2><p>添加 M3U 源，一键同步合并去重</p></div>
         <div class="card">
           <h3>添加家里的直播源</h3><p class="wizard-note">可以填写局域网订阅地址，也可以上传本地 M3U / TXT 文件。直播由手机或盒子直接连接源地址；使用局域网源时，请让设备连接家里的网络。</p>
@@ -129,7 +127,7 @@
           <div class="form-row muted" style="font-size:12px; margin-bottom:12px">
             <label>自动分组</label><label>去重</label><label>重命名</label><label>自定义 UA</label>
           </div>
-          <table v-if="sources.length">
+          <div class="table-scroll" v-if="sources.length"><table>
             <thead><tr><th>名称</th><th>地址</th><th>自动分组</th><th>去重</th><th>重命名</th><th>UA</th><th>频道数</th><th>状态</th><th>操作</th></tr></thead>
             <tbody>
               <tr v-for="s in sources" :key="s.id">
@@ -144,13 +142,13 @@
                 <td><button class="btn btn-danger btn-sm" @click="deleteSource(s)">删除</button></td>
               </tr>
             </tbody>
-          </table>
+          </table></div>
           <div class="empty" v-else>暂无直播源</div>
         </div>
       </div>
 
       <!-- EPG -->
-      <div v-if="tab==='epg'">
+      <div class="workspace-page" v-if="tab==='epg'">
         <div class="page-header"><h2>EPG 节目单</h2><p>添加 XMLTV 源，自动匹配频道显示节目预告</p></div>
         <div class="card">
           <h3>EPG 定时更新</h3>
@@ -178,7 +176,7 @@
               <button class="btn btn-green" @click="syncEpg" :disabled="epgSyncing">{{ epgSyncing ? '同步中...' : '🔄 同步 EPG' }}</button>
             </div>
           </div>
-          <table v-if="epgs.length">
+          <div class="table-scroll" v-if="epgs.length"><table>
             <thead><tr><th>名称</th><th>地址</th><th>状态</th><th>有效节目</th><th>最近同步</th><th>操作</th></tr></thead>
             <tbody>
               <tr v-for="e in epgs" :key="e.id">
@@ -189,13 +187,13 @@
                 <td><button class="btn btn-danger btn-sm" @click="deleteEpg(e)">删除</button></td>
               </tr>
             </tbody>
-          </table>
+          </table></div>
           <div class="empty" v-else>暂无 EPG 源，可添加 fanmingming EPG：<code class="muted">https://cdn.jsdelivr.net/gh/fanmingming/live@main/e.xml</code></div>
         </div>
       </div>
 
       <!-- 点播管理 -->
-      <div v-if="tab==='movies'">
+      <div class="workspace-page" v-if="tab==='movies'">
         <div class="page-header"><h2>点播管理</h2><p>添加你自己的苹果 CMS JSON 接口，APK 2.2 可浏览、搜索、选择线路和集数。支持 HTTP 视频直链，不支持需要网页解析的线路。</p></div>
         <div class="card">
           <h3>新增接口</h3>
@@ -207,7 +205,7 @@
         </div>
         <div class="card">
           <h3>资源库列表</h3>
-          <table v-if="movies.length">
+          <div class="table-scroll" v-if="movies.length"><table>
             <thead><tr><th>ID</th><th>资源名称</th><th>状态</th><th>接口地址</th><th>操作</th></tr></thead>
             <tbody>
               <tr v-for="m in movies" :key="m.id">
@@ -221,13 +219,13 @@
                 </td>
               </tr>
             </tbody>
-          </table>
+          </table></div>
           <div class="empty" v-else>暂无点播数据</div>
         </div>
       </div>
 
       <!-- 套餐管理 -->
-      <div v-if="tab==='meals'">
+      <div class="workspace-page" v-if="tab==='meals'">
         <div class="page-header"><h2>套餐管理</h2><p>套餐绑定频道分组，生成订阅链接</p></div>
         <div class="card">
           <h3>新增套餐</h3>
@@ -238,7 +236,7 @@
         </div>
         <div class="card">
           <h3>套餐列表</h3>
-          <table v-if="meals.length">
+          <div class="table-scroll" v-if="meals.length"><table>
             <thead><tr><th>ID</th><th>名称</th><th>状态</th><th>收视分组（不选表示全部）</th><th style="width:260px">操作</th></tr></thead>
             <tbody>
               <tr v-for="m in meals" :key="m.id">
@@ -259,7 +257,7 @@
                 </td>
               </tr>
             </tbody>
-          </table>
+          </table></div>
           <div class="empty" v-else>暂无套餐</div>
         </div>
         <!-- 订阅弹窗 -->
@@ -277,20 +275,17 @@
       </div>
 
       <!-- 设备授权 -->
-      <div v-if="tab==='devices'">
+      <div class="workspace-page" v-if="tab==='devices'">
         <div class="page-header"><h2>家庭设备</h2><p>查看家人使用的手机与电视盒子</p></div>
-        <div class="stats">
-          <div class="stat"><div class="num">{{ devices.length + unauthorized.length }}</div><div class="label">设备总数</div></div>
-          <div class="stat" v-if="clientCfg.needauthor==='1'"><div class="num">{{ unauthorized.length }}</div><div class="label">待授权</div></div>
-        </div>
-        <div class="card" v-if="clientCfg.needauthor!=='1'"><h3>家里的设备</h3><p class="wizard-note">当前是家庭模式，设备连接即可观看，无需选择套餐。这里显示曾连接过的手机和电视盒子。</p><table v-if="devices.length+unauthorized.length"><thead><tr><th>设备</th><th>型号</th><th>最近连接</th><th>IP 地址</th></tr></thead><tbody><tr v-for="d in [...devices,...unauthorized]" :key="d.id"><td>{{ d.name || d.device_id }}</td><td>{{ d.model }}</td><td>{{ d.last_time_str || '暂无记录' }}</td><td>{{ d.ip }}</td></tr></tbody></table><div class="empty" v-else>安装 APK 并连接服务器后，设备会出现在这里。</div></div><div class="card"><h3>家庭访问保护</h3><p class="wizard-note">{{ clientCfg.needauthor==='1' ? '已开启保护：新设备需在下方允许后才能获取频道和点播。' : '尚未开启保护，连接地址的人可获取频道。升级后请开启保护，再允许家人的设备。' }}</p><button class="btn btn-primary" v-if="clientCfg.needauthor!=='1'" @click="enableProtection">开启设备授权</button><p class="wizard-note">APK 2.2 首次连接会生成新的设备身份，需重新允许一次。撤销后，已打开的 APK 会在约一分钟内停止播放。此保护不拦截已经泄露的源直链。</p></div><div class="card"><h3>快速允许家人设备</h3><table v-if="devices.length+unauthorized.length"><thead><tr><th>设备 / 型号</th><th>设备 ID</th><th>访问状态</th><th>操作</th></tr></thead><tbody><tr v-for="d in [...unauthorized,...devices]" :key="d.id"><td>{{ d.name }}<small style="display:block;color:var(--text2)">{{ d.model }}</small></td><td style="word-break:break-all">{{ d.device_id }}</td><td>{{ d.exp_days }}</td><td><button v-if="!d.meal_id" class="btn btn-primary btn-sm" @click="familyAccess(d,'approve')">允许观看</button><button v-else class="btn btn-danger btn-sm" @click="familyAccess(d,'revoke')">撤销授权</button></td></tr></tbody></table><div class="empty" v-else>请先在 APK 填写服务器地址并连接，再刷新本页。</div></div><details><summary style="cursor:pointer;margin-bottom:16px">高级：分组授权与设备记录</summary><div class="card">
+        <div class="protection-toolbar"><span class="tag" :class="clientCfg.needauthor==='1'?'tag-green':'tag-red'">{{ clientCfg.needauthor==='1'?'授权保护已开启':'尚未开启授权保护' }}</span><span>{{ devices.length+unauthorized.length }} 台设备 · {{ unauthorized.length }} 台待授权</span><button class="btn btn-primary btn-sm" v-if="clientCfg.needauthor!=='1'" @click="enableProtection">开启设备授权</button><details><summary>授权说明</summary><p>核对 APK 显示的设备 ID 后允许观看。2.2 及以上使用独立密钥；首次升级需要重新允许一次。撤销后约一分钟内停止播放，不限制已泄露的直播源直链。</p></details></div>
+        <div class="card"><h3>快速允许家人设备</h3><div class="table-scroll" v-if="devices.length+unauthorized.length"><table><thead><tr><th>设备 / 型号</th><th>设备 ID</th><th>访问状态</th><th>操作</th></tr></thead><tbody><tr v-for="d in [...unauthorized,...devices]" :key="d.id"><td>{{ d.name }}<small style="display:block;color:var(--text2)">{{ d.model }}</small></td><td style="word-break:break-all">{{ d.device_id }}</td><td>{{ d.exp_days }}</td><td><button v-if="!d.meal_id" class="btn btn-primary btn-sm" @click="familyAccess(d,'approve')">允许观看</button><button v-else class="btn btn-danger btn-sm" @click="familyAccess(d,'revoke')">撤销授权</button></td></tr></tbody></table></div><div class="empty" v-else>请先在 APK 填写服务器地址并连接，再刷新本页。</div></div><details><summary style="cursor:pointer;margin-bottom:16px">高级：分组授权与设备记录</summary><div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
             <h3 style="margin:0">待授权列表</h3>
             <div class="search-bar" style="margin:0">
               <input v-model="deviceSearch" placeholder="搜索设备..." style="width:220px">
             </div>
           </div>
-          <table v-if="unauthorizedFiltered.length">
+          <div class="table-scroll" v-if="unauthorizedFiltered.length"><table>
             <thead><tr><th style="width:30px"><input type="checkbox" @change="checkAllUnauth" v-model="checkAll"></th><th>账号</th><th>设备ID</th><th>型号</th><th>IP</th><th>地区</th><th>状态</th><th>最后登录</th></tr></thead>
             <tbody>
               <tr v-for="d in unauthorizedFiltered" :key="d.id">
@@ -304,7 +299,7 @@
                 <td>{{ d.last_time_str }}</td>
               </tr>
             </tbody>
-          </table>
+          </table></div>
           <div class="empty" v-else>{{ deviceSearch ? '无匹配设备' : '暂无待授权设备' }}</div>
           <div v-if="selectedDevices.length" style="margin-top:12px; display:flex; gap:12px; align-items:center">
             <span>已选 {{ selectedDevices.length }} 台：</span>
@@ -315,7 +310,7 @@
         </div>
         <div class="card">
           <h3>已授权设备</h3>
-          <table v-if="devices.length">
+          <div class="table-scroll" v-if="devices.length"><table>
             <thead><tr><th>账号</th><th>套餐</th><th>设备ID</th><th>型号</th><th>IP</th><th>地区</th><th>到期</th><th>备注</th><th>操作</th></tr></thead>
             <tbody>
               <tr v-for="d in devices" :key="d.id">
@@ -330,21 +325,21 @@
                 <td><button class="btn btn-danger btn-sm" @click="deleteDevice(d)">删除</button></td>
               </tr>
             </tbody>
-          </table>
+          </table></div>
           <div class="empty" v-else>暂无已授权设备</div>
         </div>
       </details>
       </div>
 
-      <section v-if="tab==='client'">
+      <section class="workspace-page" v-if="tab==='client'">
         <div class="page-header"><h2>手机与电视</h2><p>由你配置一次，家人打开就能看。</p></div>
         <div class="dashboard-grid"><div><div class="card"><h3>01 · 连接管理平台</h3><p class="wizard-note">在 APK 首次启动页输入下面的地址。局域网直播源需要手机和盒子连接家里的网络。换域名后，请同时修改已安装 APK 的服务器设置。</p><div class="form-row"><label>服务器地址</label><input v-model="clientCfg.server_url" :placeholder="currentOrigin"></div><button class="btn btn-ghost" @click="clientCfg.server_url=currentOrigin">使用当前访问地址</button></div>
-        <div class="card"><h3>02 · 安装到手机或盒子</h3><p class="wizard-note">Android 7.0 及以上。安卓手机、极光盒子、当贝盒子共用安装包；实际播放能力取决于设备和直播源。</p><div class="form-row"><label>APK 下载地址</label><input v-model="clientCfg.apk_url" placeholder="留空使用官方 2.2.0 安装包"></div><button class="btn btn-blue" @click="buildApk">下载安装包 ↗</button></div>
+        <div class="card"><h3>02 · 安装到手机或盒子</h3><p class="wizard-note">Android 7.0 及以上。安卓手机、极光盒子、当贝盒子共用安装包；实际播放能力取决于设备和直播源。</p><div class="form-row"><label>APK 下载地址</label><input v-model="clientCfg.apk_url" placeholder="留空使用官方 2.3.0 安装包"></div><button class="btn btn-blue" @click="buildApk">下载安装包 ↗</button></div>
         <button class="btn btn-primary" @click="saveClientCfg">保存配置</button></div><div><div class="card"><h3>给家人的操作说明</h3><div class="check-row"><span class="check-bullet done">1</span><div class="grow"><strong>打开就播放</strong><small>记住上次观看的频道</small></div></div><div class="check-row"><span class="check-bullet done">2</span><div class="grow"><strong>上下键换台</strong><small>确认键打开频道列表，返回键继续看</small></div></div><div class="check-row"><span class="check-bullet done">3</span><div class="grow"><strong>长按频道收藏</strong><small>常看频道集中在“我的收藏”</small></div></div></div><div class="card"><h3>设备访问方式</h3><p class="wizard-note">建议开启设备授权，在“家庭设备”中一键允许家人使用。已有配置升级时会保留，请手动开启。</p><select v-model="clientCfg.needauthor"><option value="0">开放模式 · 任何设备可连接</option><option value="1">家庭保护 · 仅允许的设备观看</option></select></div></div></div>
       </section>
 
       <!-- 系统公告 -->
-      <div v-if="tab==='notice'">
+      <div class="workspace-page" v-if="tab==='notice'">
         <div class="page-header"><h2>系统公告</h2><p>客户端启动时显示的公告</p></div>
         <div class="card">
           <h3>公告内容</h3>
@@ -358,7 +353,7 @@
       </div>
 
       <!-- 系统更新 -->
-      <div v-if="tab==='update'">
+      <div class="workspace-page" v-if="tab==='update'">
         <div class="page-header"><h2>系统更新</h2><p>当前版本信息</p></div>
         <div class="card">
           <div class="form-row" style="align-items:center">
@@ -369,16 +364,16 @@
           </div>
           <div style="margin-top:16px">
             <h3>升级日志</h3>
-            <table v-if="changelog.length">
+            <div class="table-scroll" v-if="changelog.length"><table>
               <thead><tr><th>版本</th><th>日期</th><th>说明</th></tr></thead>
               <tbody><tr v-for="c in changelog" :key="c.version"><td>{{ c.version }}</td><td>{{ c.date }}</td><td>{{ c.desc }}</td></tr></tbody>
-            </table>
+            </table></div>
           </div>
         </div>
       </div>
 
       <!-- M3U 下发 -->
-      <div v-if="tab==='m3u'">
+      <div class="workspace-page" v-if="tab==='m3u'">
         <div class="page-header"><h2>M3U 下发</h2><p>把这些地址填入播放器即可拉取全部频道</p></div>
         <div class="card">
           <h3>下发地址</h3>
@@ -403,7 +398,7 @@
       </div>
 
       <!-- 系统设置 -->
-      <div v-if="tab==='settings'">
+      <div class="workspace-page" v-if="tab==='settings'">
         <div class="page-header"><h2>系统设置</h2><p>站点信息与账号密码</p></div>
         <div class="card">
           <h3>站点设置</h3>
@@ -701,7 +696,7 @@ createApp({
     },
     async buildApk() {
       try {
-        const url=this.clientCfg.apk_url || 'https://github.com/billconan2017/xibao-iptv/releases/download/v2.2.0/xibao-tv-2.2.0.apk';
+        const url=this.clientCfg.apk_url || 'https://github.com/billconan2017/xibao-iptv/releases/download/v2.3.0/xibao-tv-2.3.0.apk';
         if(!/^https?:\/\//i.test(url))throw new Error('请填写完整的 HTTP 或 HTTPS 下载地址');
         window.open(url, '_blank', 'noopener');
       } catch (e) { this.showToast(e.message, true); }
