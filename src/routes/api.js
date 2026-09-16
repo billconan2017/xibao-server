@@ -123,7 +123,20 @@ router.post('/sources', requireAuth, (req, res) => {
     ).run(sourceName, key, 'upload');
     // 解析内容并写入频道
     const channels = parseM3U(content);
-    mergeChannels(db, channels, info.lastInsertRowid);
+    const insertCh = db.prepare(
+      `INSERT INTO channels (name, url, group_name, tvg_id, tvg_logo, tvg_name, source_id, sort_order)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    );
+    db.exec('BEGIN');
+    try {
+      channels.forEach((ch, i) => {
+        insertCh.run(ch.name, ch.url, ch.group_name, ch.tvg_id, ch.tvg_logo, ch.tvg_name, info.lastInsertRowid, i);
+      });
+      db.exec('COMMIT');
+    } catch (e) {
+      db.exec('ROLLBACK');
+      throw e;
+    }
     db.prepare('UPDATE sources SET channel_count=? WHERE id=?').run(channels.length, info.lastInsertRowid);
     return res.json({ code: 0, data: { id: info.lastInsertRowid, count: channels.length } });
   }

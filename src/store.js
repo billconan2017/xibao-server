@@ -131,10 +131,32 @@ export function initDb() {
     CREATE INDEX IF NOT EXISTS idx_channels_enabled ON channels(enabled);
   `);
 
+  // 数据库迁移：给旧表补新字段（已有表不会自动加列）
+  migrate();
+
   // 初始化默认管理员 & 默认设置
   seedDefaults();
 
   return db;
+}
+
+// 自动迁移：检测旧表缺列则 ALTER TABLE ADD COLUMN
+function migrate() {
+  const ensureColumn = (table, col, ddl) => {
+    const cols = db.prepare(`PRAGMA table_info(${table})`).all().map(c => c.name);
+    if (!cols.includes(col)) {
+      db.exec(`ALTER TABLE ${table} ADD COLUMN ${ddl}`);
+      console.log(`[Migrate] ${table}.${col} 已添加`);
+    }
+  };
+
+  ensureColumn('sources', 'ua', "ua TEXT DEFAULT ''");
+  ensureColumn('sources', 'auto_group', 'auto_group INTEGER DEFAULT 0');
+  ensureColumn('sources', 'dedup', 'dedup INTEGER DEFAULT 0');
+  ensureColumn('sources', 'rename', 'rename INTEGER DEFAULT 0');
+
+  // 若 channels 表缺 source_id 列则补
+  ensureColumn('channels', 'source_id', 'source_id INTEGER DEFAULT 0');
 }
 
 function seedDefaults() {
