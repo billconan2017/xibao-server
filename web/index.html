@@ -3,146 +3,35 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>喜宝IPTV</title>
+<title>喜宝 TV · 家人的电视</title>
 <script src="/vendor/vue.global.prod.js"></script>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --bg: #0f1115; --bg2: #1a1d24; --card: #1f232c; --border: #2a2f3a;
-  --text: #e6e8eb; --text2: #9aa0ab; --accent: #ff6b35; --accent2: #4f8cff;
-  --green: #2ecc71;
-}
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background: var(--bg); color: var(--text);
-  min-height: 100vh;
-  background: radial-gradient(ellipse at top, #1a1d24 0%, #0f1115 60%);
-}
-.topbar {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 16px 32px; border-bottom: 1px solid var(--border);
-  background: rgba(15,17,21,0.92); backdrop-filter: blur(8px);
-  position: sticky; top: 0; z-index: 10;
-}
-.topbar .brand { font-size: 20px; font-weight: 700; }
-.topbar .brand span { color: var(--accent); }
-.topbar nav { display: flex; gap: 8px; align-items: center; }
-.topbar nav a {
-  color: var(--text2); text-decoration: none; font-size: 14px;
-  padding: 8px 16px; border-radius: 8px; transition: all .15s;
-}
-.topbar nav a:hover { color: var(--text); background: var(--card); }
-.topbar nav a.admin { background: var(--accent); color: #fff; font-weight: 600; }
-
-.hero {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 80px 24px 40px; text-align: center;
-}
-.hero h1 { font-size: 48px; font-weight: 700; margin-bottom: 12px; }
-.hero h1 span { color: var(--accent); }
-.hero .sub { color: var(--text2); font-size: 18px; margin-bottom: 40px; max-width: 500px; }
-.hero .dl-card {
-  background: var(--card); border: 1px solid var(--border); border-radius: 20px;
-  padding: 48px 40px; max-width: 480px; width: 100%;
-}
-.hero .dl-btn {
-  display: flex; align-items: center; gap: 12px; justify-content: center;
-  padding: 20px; background: var(--accent); color: #fff; border-radius: 14px;
-  font-size: 20px; font-weight: 700; text-decoration: none; margin-bottom: 28px;
-  transition: opacity .15s;
-}
-.hero .dl-btn:hover { opacity: .88; }
-.hero .steps { text-align: left; font-size: 14px; color: var(--text2); line-height: 2.2; }
-.hero .steps b { color: var(--text); }
-.hero .steps .num {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff;
-  font-size: 12px; margin-right: 10px;
-}
-
-.features {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 20px; max-width: 1060px; margin: 0 auto; padding: 0 24px 60px;
-}
-.feat {
-  background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 28px;
-  transition: border-color .2s;
-}
-.feat:hover { border-color: var(--accent); }
-.feat .ico { font-size: 32px; margin-bottom: 12px; }
-.feat h3 { font-size: 16px; margin-bottom: 6px; }
-.feat p { font-size: 13px; color: var(--text2); line-height: 1.6; }
-
-.footer {
-  text-align: center; padding: 32px; color: var(--text2); font-size: 13px;
-  border-top: 1px solid var(--border); background: var(--bg2);
-}
-.footer a { color: var(--accent2); text-decoration: none; }
-.footer .sep { margin: 0 8px; color: var(--border); }
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;background:#f4f7fc;color:#172a46}a{color:inherit;text-decoration:none}button,a{-webkit-tap-highlight-color:transparent}a:focus-visible{outline:3px solid #83aaff;outline-offset:4px}#app{min-height:100svh;display:flex;flex-direction:column}header,footer{display:flex;align-items:center;justify-content:space-between;padding:0 max(24px,calc((100vw - 1120px)/2));flex-shrink:0}header{height:72px;border-bottom:1px solid #e0e7f1;background:#fff}.brand{font-size:21px;font-weight:800;letter-spacing:-.5px}.brand span{color:#2865ed}nav{display:flex;align-items:center;gap:24px;font-size:13px;color:#64748b}.admin{background:#172a46;color:#fff;padding:11px 18px;border-radius:8px}main{width:min(1120px,calc(100% - 48px));margin:auto;display:flex;flex-direction:column;gap:40px;padding:32px 0}.hero{display:grid;grid-template-columns:1.2fr 1fr;align-items:center;gap:72px}.eyebrow{font-size:12px;letter-spacing:3px;color:#2865ed;font-weight:600;margin:0 0 20px}.hero h1{font-size:clamp(36px,4.2vw,58px);line-height:1.22;letter-spacing:-2px;margin:0 0 20px;font-weight:800}.hero h1 span{color:#2865ed}.intro{font-size:15px;line-height:1.85;color:#65758b;max-width:390px;margin:0}.platforms{display:flex;gap:8px;margin-top:24px;flex-wrap:wrap}.platforms span{padding:7px 12px;font-size:12px;border:1px solid #dae3f1;border-radius:6px;color:#53667e;background:#fff}.download{background:#fff;border:1px solid #dce5f2;border-radius:18px;padding:28px;box-shadow:0 12px 36px #253e6c08}.card-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}.card-heading h2{font-size:19px;margin:0}.badge{font-size:11px;color:#667c99;background:#eff4fc;border-radius:5px;padding:5px 8px}.dl-btn{display:flex;align-items:center;justify-content:space-between;background:#2865ed;color:#fff;padding:17px 20px;border-radius:10px;font-size:16px;font-weight:650}.dl-btn:hover{background:#1b53cd}.steps{padding:0;margin:22px 0 0;list-style:none;counter-reset:step;display:grid;gap:14px}.steps li{display:flex;gap:11px;align-items:center;font-size:13px;color:#66788e;line-height:1.5}.steps li:before{counter-increment:step;content:counter(step);display:grid;place-items:center;flex:0 0 23px;height:23px;background:#edf3ff;color:#2865ed;border-radius:50%;font-size:11px}.features{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid #dfe6f1;padding-top:26px;gap:32px}.feature{display:flex;gap:14px;align-items:flex-start}.icon{flex:0 0 36px;height:36px;display:grid;place-items:center;color:#2865ed;border:1px solid #dce5f2;border-radius:9px;background:#fff;font-size:18px}.feature h3{font-size:14px;margin:0 0 7px}.feature p{font-size:12px;line-height:1.7;color:#718198;margin:0}footer{height:48px;font-size:11px;color:#8a98ab;border-top:1px solid #e0e7f1}footer a{color:#65758b}
+@media(max-height:740px) and (min-width:701px){header{height:60px}main{gap:28px;padding:24px 0}.hero h1{font-size:46px}.download{padding:24px}.features{padding-top:22px}footer{height:40px}}
+@media(max-width:700px){header{height:58px;padding:0 20px}.brand{font-size:18px}nav{gap:14px}.admin{padding:9px 12px}main{width:calc(100% - 40px);gap:24px;padding:24px 0}.hero{grid-template-columns:1fr;gap:24px}.eyebrow{font-size:10px;margin-bottom:10px}.hero h1{font-size:34px;letter-spacing:-1px;margin-bottom:10px}.intro{font-size:13px;max-width:none}.platforms{margin-top:12px}.platforms span{padding:5px 8px;font-size:11px}.download{padding:20px}.card-heading{margin-bottom:14px}.card-heading h2{font-size:17px}.dl-btn{padding:14px 16px;font-size:15px}.steps{margin-top:16px;gap:10px}.steps li{font-size:12px}.features{gap:12px;padding-top:20px}.feature{display:block}.icon{display:none}.feature h3{font-size:12px;margin-bottom:5px}.feature p{font-size:11px}footer{height:40px;padding:0 20px;font-size:10px}}
 </style>
-<link rel="stylesheet" href="/portal.css"></head>
+</head>
 <body>
 <div id="app">
-  <div class="topbar">
-    <div class="brand">喜宝<span> TV</span></div>
-    <nav>
-      <a href="#features">功能介绍</a>
-      <a href="/login">登录</a>
-      <a href="/admin" class="admin">管理后台</a>
-    </nav>
-  </div>
-
-  <div class="hero">
-    <div class="portal-eyebrow">MADE FOR YOUR FAMILY</div><h1>打开，就看<span>电视。</span></h1>
-    <p class="sub">熟悉的频道，简单的遥控器。为你和家人准备的直播播放器。</p>
-    <div class="dl-card">
-      <a class="dl-btn" :href="apkUrl" download>下载安卓安装包 ↗</a>
-      <div class="steps">
-        <div><span class="num">1</span>下载 APK 到手机 / 电视</div>
-        <div><span class="num">2</span>安装后输入服务器地址</div>
-        <div><span class="num">3</span>下次打开，继续收看上次频道</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="features" id="features">
-    <div class="feat"><div class="ico">📡</div><h3>多源导入</h3><p>粘贴任意 M3U 直播源，一键合并去重，支持多源管理</p></div>
-    <div class="feat"><div class="ico">🗂️</div><h3>频道管理</h3><p>分组、台标、启停、排序，全在网页后台操作</p></div>
-    <div class="feat"><div class="ico">📅</div><h3>EPG 节目单</h3><p>XMLTV 源对接，自动匹配频道，显示实时节目预告</p></div>
-    <div class="feat"><div class="ico">♡</div><h3>家人常看</h3><p>收藏喜欢的频道，大字列表，减少寻找和操作</p></div>
-    <div class="feat"><div class="ico">↻</div><h3>自动重连</h3><p>断流后重试，有备用线路时自动尝试切换</p></div>
-    <div class="feat"><div class="ico">🔒</div><h3>完全自建</h3><p>数据和播放不依赖第三方，服务器在你自己手里</p></div>
-  </div>
-
-  <div class="footer">
-    © {{ year }} {{ siteName }}
-    <span class="sep">·</span>
-    <a href="/login">登录</a>
-    <span class="sep">·</span>
-    <a href="/admin">管理后台</a>
-  </div>
+<header><a class="brand" href="/" aria-label="喜宝 TV 首页">喜宝<span> TV</span></a><nav><a href="/login">登录</a><a href="/admin" class="admin">管理后台 ↗</a></nav></header>
+<main>
+  <section class="hero">
+    <div><p class="eyebrow">给家人的电视</p><h1>打开，<br>就是<span>熟悉的频道。</span></h1><p class="intro">把常看的直播放在一起。拿起遥控器，或打开手机，轻松接着看。</p><div class="platforms"><span>Android 手机</span><span>电视 / 机顶盒</span><span>家庭自建</span></div></div>
+    <section class="download" aria-label="下载安装"><div class="card-heading"><h2>开始看电视</h2><span class="badge">Android 7.0 及以上</span></div><a class="dl-btn" :href="apkUrl" download><span>下载安卓安装包</span><span aria-hidden="true">↓</span></a><ol class="steps"><li>在手机安装，或用 U 盘传到电视 / 盒子</li><li>填写服务器地址，由管理员授权设备</li><li>选择频道，下次打开继续收看</li></ol></section>
+  </section>
+  <section class="features" aria-label="播放功能">
+    <div class="feature"><span class="icon" aria-hidden="true">▤</span><div><h3>频道随手切</h3><p>按分组浏览，收藏家人常看的频道。</p></div></div>
+    <div class="feature"><span class="icon" aria-hidden="true">◷</span><div><h3>现在播什么</h3><p>接入节目单，查看当前节目与播出进度。</p></div></div>
+    <div class="feature"><span class="icon" aria-hidden="true">⌂</span><div><h3>只给家人用</h3><p>自己的直播源，自己管理设备与授权。</p></div></div>
+  </section>
+</main>
+<footer><span>© {{ year }} {{ siteName }}</span><span>简单一点，看电视。</span></footer>
 </div>
-
 <script>
 const { createApp } = Vue;
 createApp({
-  data() {
-    return { siteName: '喜宝IPTV', apkUrl: '', year: '2026' };
-  },
-  async mounted() {
-    this.year = String(new Date().getFullYear());
-    try {
-      const res = await fetch('/api/settings');
-      const json = await res.json();
-      if (json.code === 0 && json.data) {
-        this.siteName = json.data.site_name || '喜宝IPTV';
-        if (json.data.apk_url) this.apkUrl = json.data.apk_url;
-      }
-    } catch (e) {}
-    if (!this.apkUrl) {
-      this.apkUrl = 'https://github.com/billconan2017/xibao-iptv/releases/download/v2.3.0/xibao-tv-2.3.0.apk';
-    }
-  },
+  data(){return {siteName:'喜宝 TV',apkUrl:'https://github.com/billconan2017/xibao-iptv/releases/download/v2.4.0/xibao-tv-2.4.0.apk',year:new Date().getFullYear()};},
+  async mounted(){try{const res=await fetch('/api/settings');const json=await res.json();if(json.code===0&&json.data){this.siteName=json.data.site_name||this.siteName;if(json.data.apk_url)this.apkUrl=json.data.apk_url;}}catch(e){}}
 }).mount('#app');
 </script>
 </body>

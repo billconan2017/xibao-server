@@ -15,7 +15,7 @@ router.get('/client/config', requireAuth, (req, res) => {
       apk_url: getSetting('apk_url', ''),
       packagename: getSetting('client_packagename', 'com.xibao.iptv'),
       appname: getSetting('client_appname', '喜宝 TV'),
-      version: getSetting('client_version', '2.3.0'),
+      version: getSetting('client_version', '2.4.0'),
       needauthor: getSetting('client_needauthor', '0'),
       decoder: getSetting('client_decoder', '3'),
       bufftimeout: getSetting('client_bufftimeout', '10'),
@@ -70,7 +70,7 @@ router.get('/client/config/public', (req, res) => {
     data: {
       server_url: getSetting('client_server_url', ''),
       appname: getSetting('client_appname', '喜宝 TV'),
-      version: getSetting('client_version', '2.3.0'),
+      version: getSetting('client_version', '2.4.0'),
       needauthor: getSetting('client_needauthor', '0'),
       decoder: getSetting('client_decoder', '3'),
       bufftimeout: getSetting('client_bufftimeout', '10'),
@@ -116,8 +116,8 @@ router.get('/update', (req, res) => {
   res.json({
     code: 0,
     data: {
-      version: getSetting('version', '2.3.0'),
-      latest: getSetting('version', '2.3.0'),
+      version: getSetting('version', '2.4.0'),
+      latest: getSetting('version', '2.4.0'),
       has_update: false,
     },
   });
@@ -127,13 +127,13 @@ router.get('/update', (req, res) => {
 
 router.get('/about', (req, res) => {
   const changelog = [
-    { version: 'v2.3.0', date: '2026-09-16', desc: '家庭管理界面、频道编辑与排序、本地 TXT 分组导入；修复客户端启动闪退，增加自动播放、收藏和重连' },
+    { version: 'v2.4.0', date: '2026-09-16', desc: '首页一屏展示下载与安装说明；手机频道按需展开，增加独立全屏按钮与方向还原' },
     { version: 'v2.0.0', date: '2026-09-16', desc: '原生 Android TV/手机客户端、设备授权与套餐频道下发' },
     { version: 'v1.1.0', date: '2026-09-16', desc: '综合门户：登录 + APK下载首页 + 后台多页 + EPG' },
     { version: 'v1.0.1', date: '2026-09-15', desc: 'APK 连自建后端' },
     { version: 'v1.0.0', date: '2026-09-14', desc: '首个版本' },
   ];
-  res.json({ code: 0, data: { changelog, version: getSetting('version', '2.3.0') } });
+  res.json({ code: 0, data: { changelog, version: getSetting('version', '2.4.0') } });
 });
 
 export default router;

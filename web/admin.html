@@ -334,7 +334,7 @@
       <section class="workspace-page" v-if="tab==='client'">
         <div class="page-header"><h2>手机与电视</h2><p>由你配置一次，家人打开就能看。</p></div>
         <div class="dashboard-grid"><div><div class="card"><h3>01 · 连接管理平台</h3><p class="wizard-note">在 APK 首次启动页输入下面的地址。局域网直播源需要手机和盒子连接家里的网络。换域名后，请同时修改已安装 APK 的服务器设置。</p><div class="form-row"><label>服务器地址</label><input v-model="clientCfg.server_url" :placeholder="currentOrigin"></div><button class="btn btn-ghost" @click="clientCfg.server_url=currentOrigin">使用当前访问地址</button></div>
-        <div class="card"><h3>02 · 安装到手机或盒子</h3><p class="wizard-note">Android 7.0 及以上。安卓手机、极光盒子、当贝盒子共用安装包；实际播放能力取决于设备和直播源。</p><div class="form-row"><label>APK 下载地址</label><input v-model="clientCfg.apk_url" placeholder="留空使用官方 2.3.0 安装包"></div><button class="btn btn-blue" @click="buildApk">下载安装包 ↗</button></div>
+        <div class="card"><h3>02 · 安装到手机或盒子</h3><p class="wizard-note">Android 7.0 及以上。安卓手机、极光盒子、当贝盒子共用安装包；实际播放能力取决于设备和直播源。</p><div class="form-row"><label>APK 下载地址</label><input v-model="clientCfg.apk_url" placeholder="留空使用官方 2.4.0 安装包"></div><button class="btn btn-blue" @click="buildApk">下载安装包 ↗</button></div>
         <button class="btn btn-primary" @click="saveClientCfg">保存配置</button></div><div><div class="card"><h3>给家人的操作说明</h3><div class="check-row"><span class="check-bullet done">1</span><div class="grow"><strong>打开就播放</strong><small>记住上次观看的频道</small></div></div><div class="check-row"><span class="check-bullet done">2</span><div class="grow"><strong>上下键换台</strong><small>确认键打开频道列表，返回键继续看</small></div></div><div class="check-row"><span class="check-bullet done">3</span><div class="grow"><strong>长按频道收藏</strong><small>常看频道集中在“我的收藏”</small></div></div></div><div class="card"><h3>设备访问方式</h3><p class="wizard-note">建议开启设备授权，在“家庭设备”中一键允许家人使用。已有配置升级时会保留，请手动开启。</p><select v-model="clientCfg.needauthor"><option value="0">开放模式 · 任何设备可连接</option><option value="1">家庭保护 · 仅允许的设备观看</option></select></div></div></div>
       </section>
 
@@ -696,7 +696,7 @@ createApp({
     },
     async buildApk() {
       try {
-        const url=this.clientCfg.apk_url || 'https://github.com/billconan2017/xibao-iptv/releases/download/v2.3.0/xibao-tv-2.3.0.apk';
+        const url=this.clientCfg.apk_url || 'https://github.com/billconan2017/xibao-iptv/releases/download/v2.4.0/xibao-tv-2.4.0.apk';
         if(!/^https?:\/\//i.test(url))throw new Error('请填写完整的 HTTP 或 HTTPS 下载地址');
         window.open(url, '_blank', 'noopener');
       } catch (e) { this.showToast(e.message, true); }
