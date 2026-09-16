@@ -108,11 +108,25 @@ router.get('/sources', (req, res) => {
   res.json({ code: 0, data: rows });
 });
 
-// 添加源
+// 添加源（URL 或上传 M3U 内容）
 router.post('/sources', requireAuth, (req, res) => {
   const db = getDb();
-  const { name, url, type } = req.body;
-  if (!url) return res.status(400).json({ code: 1, msg: 'url 必填' });
+  const { name, url, type, content } = req.body;
+  if (!url && !content) return res.status(400).json({ code: 1, msg: '请填写 M3U 地址或上传文件' });
+
+  if (content) {
+    // 上传的 M3U 内容 → 直接入库作为文件源
+    const sourceName = name || '上传文件 ' + new Date().toLocaleString('zh-CN');
+    const key = 'file_' + Date.now();
+    const info = db.prepare(
+      `INSERT INTO sources (name, url, type) VALUES (?, ?, ?)`
+    ).run(sourceName, key, 'upload');
+    // 解析内容并写入频道
+    const channels = parseM3U(content);
+    mergeChannels(db, channels, info.lastInsertRowid);
+    db.prepare('UPDATE sources SET channel_count=? WHERE id=?').run(channels.length, info.lastInsertRowid);
+    return res.json({ code: 0, data: { id: info.lastInsertRowid, count: channels.length } });
+  }
 
   try {
     const info = db.prepare(

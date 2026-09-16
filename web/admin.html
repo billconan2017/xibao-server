@@ -203,6 +203,13 @@ pre.code { background: var(--bg2); padding: 16px; border-radius: 8px; font-size:
             <input v-model="newSource.url" placeholder="M3U 地址 https://..." style="flex:2">
             <button class="btn btn-primary" @click="addSource">添加</button>
           </div>
+          <div style="margin-top:12px; display:flex; gap:12px; align-items:center">
+            <span class="muted">或者上传 M3U 文件：</span>
+            <input type="file" ref="fileInput" accept=".m3u,.m3u8,.txt" @change="uploadM3uFile" style="display:none">
+            <button class="btn btn-ghost" @click="$refs.fileInput.click()">📁 选择文件</button>
+            <span class="muted" v-if="uploadFileName">{{ uploadFileName }}</span>
+            <button class="btn btn-primary" v-if="uploadFileName" @click="submitM3uFile">上传并导入</button>
+          </div>
         </div>
         <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
@@ -531,6 +538,7 @@ createApp({
       movies: [], meals: [], devices: [], unauthorized: [],
       newChannel: { name: '', url: '', group_name: '', tvg_logo: '' },
       newSource: { name: '', url: '' },
+      uploadFileName: '', uploadFileContent: '',
       newEpg: { name: '', url: '' },
       newMovie: { name: '', api: '' },
       newMeal: { name: '' },
@@ -629,6 +637,23 @@ createApp({
         await this.api('/api/sources', { method: 'POST', body: JSON.stringify(this.newSource) });
         this.newSource = { name: '', url: '' };
         await this.loadAll(); this.showToast('源已添加');
+      } catch (e) { this.showToast(e.message, true); }
+    },
+    uploadM3uFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      this.uploadFileName = file.name;
+      const reader = new FileReader();
+      reader.onload = (ev) => { this.uploadFileContent = ev.target.result; };
+      reader.readAsText(file, 'utf-8');
+    },
+    async submitM3uFile() {
+      if (!this.uploadFileContent) return;
+      try {
+        const r = await this.api('/api/sources', { method: 'POST', body: JSON.stringify({ content: this.uploadFileContent }) });
+        this.uploadFileName = ''; this.uploadFileContent = '';
+        await this.loadAll();
+        this.showToast('文件已导入，共 ' + r.count + ' 个频道');
       } catch (e) { this.showToast(e.message, true); }
     },
     async addEpg() {
