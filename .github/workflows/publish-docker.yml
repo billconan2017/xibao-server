@@ -16,8 +16,9 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      - name: Test playlist imports
-        run: node --test test/playlist.test.js
+      - name: Test family access, EPG and playlists
+        run: |
+          docker run --rm -v "$PWD:/app" -w /app node:22-alpine sh -c "npm ci && node --test test/*.test.js"
       - name: Read package version
         id: version
         run: |

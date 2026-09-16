@@ -6,12 +6,14 @@ import { syncAllSources } from '../source.js';
 import { requireAuth } from '../auth.js';
 import { getSetting } from '../store.js';
 
+import { requireDevice, rateLimit } from '../device-auth.js';
+
 const router = express.Router();
 
 // ============ 频道管理 ============
 
 // 列出所有频道（支持 group 过滤、搜索）
-router.get('/channels', (req, res) => {
+router.get('/channels', requireAuth, (req, res) => {
   const db = getDb();
   const { group, search, enabled } = req.query;
 
@@ -37,7 +39,7 @@ router.get('/channels', (req, res) => {
 });
 
 // 分组列表
-router.get('/groups', (req, res) => {
+router.get('/groups', requireAuth, (req, res) => {
   const db = getDb();
   const rows = db.prepare(
     'SELECT group_name, COUNT(*) as count FROM channels WHERE enabled=1 GROUP BY group_name ORDER BY group_name'
@@ -103,7 +105,7 @@ router.delete('/channels/:id', requireAuth, (req, res) => {
 // ============ 直播源管理 ============
 
 // 源列表
-router.get('/sources', (req, res) => {
+router.get('/sources', requireAuth, (req, res) => {
   const db = getDb();
   const rows = db.prepare('SELECT * FROM sources ORDER BY id').all();
   res.json({ code: 0, data: rows });
@@ -244,7 +246,7 @@ router.post('/sync', requireAuth, async (req, res) => {
 // ============ 下发 ============
 
 // 下发 M3U（供 APK / 播放器拉取）
-router.get('/m3u', (req, res) => {
+router.get('/m3u', requireAuth, (req, res) => {
   const db = getDb();
   const channels = db.prepare(
     'SELECT * FROM channels WHERE enabled=1 ORDER BY sort_order, id'
@@ -256,7 +258,7 @@ router.get('/m3u', (req, res) => {
 });
 
 // 文本格式（供 APK getM3U 对接，返回纯文本）
-router.get('/api/m3u.txt', (req, res) => {
+router.get('/api/m3u.txt', requireAuth, (req, res) => {
   const db = getDb();
   const channels = db.prepare(
     'SELECT * FROM channels WHERE enabled=1 ORDER BY sort_order, id'
@@ -266,7 +268,7 @@ router.get('/api/m3u.txt', (req, res) => {
 });
 
 // 兼容旧 APK 接口名
-router.get('/mytv/getUserM3U8', (req, res) => {
+router.get('/mytv/getUserM3U8', requireAuth, (req, res) => {
   const db = getDb();
   const channels = db.prepare(
     'SELECT * FROM channels WHERE enabled=1 ORDER BY sort_order, id'
@@ -276,15 +278,14 @@ router.get('/mytv/getUserM3U8', (req, res) => {
 });
 
 // 频道 JSON（供新版 APK）
-router.get('/api/channels.json', (req, res) => {
+router.get('/api/channels.json', rateLimit(), requireDevice, (req, res) => {
   const db = getDb();
   let channels = db.prepare(
     'SELECT id, name, url, group_name, tvg_id, tvg_logo FROM channels WHERE enabled=1 ORDER BY sort_order, id'
   ).all();
 
-  if (getSetting('client_needauthor', '0') === '1') {
-    const deviceId = String(req.query.device_id || '');
-    const device = deviceId ? db.prepare('SELECT * FROM devices WHERE device_id=?').get(deviceId) : null;
+  if (req.device) {
+    const device = req.device;
     const now = Date.now() / 1000 | 0;
     if (!device || !device.meal_id || (device.exp_at > 0 && device.exp_at <= now)) {
       return res.status(403).json({ code: 403, msg: '设备未授权或授权已过期' });

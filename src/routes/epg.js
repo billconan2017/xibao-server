@@ -2,6 +2,7 @@
 import express from 'express';
 import { getDb } from '../store.js';
 import { requireAuth } from '../auth.js';
+import { requireDevice, rateLimit } from '../device-auth.js';
 
 const router = express.Router();
 
@@ -16,6 +17,8 @@ const FETCH_TIMEOUT = 25000;              // 拉取超时 25s
 router.get('/epgs', requireAuth, (req, res) => {
   const db = getDb();
   const rows = db.prepare('SELECT * FROM epgs ORDER BY id').all();
+  const counts=db.prepare('SELECT COUNT(*) AS program_count,COUNT(DISTINCT channel_id) AS channel_count FROM programs WHERE epg_id=? AND end_time>?');
+  for(const row of rows)Object.assign(row,counts.get(row.id,Math.floor(Date.now()/1000)));
   res.json({ code: 0, data: rows });
 });
 
@@ -65,16 +68,23 @@ router.post('/epgs/sync', requireAuth, async (req, res) => {
 });
 
 // 供路由与 cron 共用的 EPG 同步核心
+let syncing = false;
 export async function syncEpgInternal(db) {
+  if (syncing) return { total:0, results:[], busy:true };
+  syncing = true;
+  try { return await runEpgSync(db); } finally { syncing = false; }
+}
+async function runEpgSync(db) {
   const epgs = db.prepare('SELECT * FROM epgs WHERE enabled=1').all();
 
   const programInsert = db.prepare(
-    `INSERT INTO programs (epg_id, channel_id, title, start_time, end_time, description)
-     VALUES (?, ?, ?, ?, ?, ?)`
+    `INSERT INTO programs (epg_id, channel_id, title, start_time, end_time, description, channel_name)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
   );
 
   const channels = db.prepare('SELECT * FROM channels').all();
   const chMap = buildChannelMatchMap(channels);
+  const channelNames = new Map(channels.map(c => [c.id,c.name]));
 
   let total = 0;
   const results = [];
@@ -87,19 +97,17 @@ export async function syncEpgInternal(db) {
       // 2. 解析（带数量上限）
       const programs = parseXmltv(text, MAX_PROGRAMS);
 
-      // 3. 删除该源旧节目
-      db.prepare('DELETE FROM programs WHERE epg_id=?').run(epg.id);
-
       // 4. 批量事务写入（只保留能匹配到真实频道的节目）
       db.exec('BEGIN');
       try {
+        db.prepare('DELETE FROM programs WHERE epg_id=?').run(epg.id);
         let cnt = 0;
         for (const p of programs) {
           // 统一归一化后再匹配（buildChannelMatchMap 存的都是 normalizeName 后的 key）
           const key = normalizeName(p.channel);
-          const chId = key ? chMap.get(key) : null;
+          const chId = chMap.get(key) ?? p.names.map(name => chMap.get(normalizeName(name)) ?? chMap.get(shortAlias(name))).find(id => id != null);
           if (chId != null) {
-            programInsert.run(epg.id, chId, p.title, p.start, p.stop, p.desc || '');
+            programInsert.run(epg.id, chId, p.title, p.start, p.stop, p.desc || '', channelNames.get(chId) || '');
             cnt++;
           }
         }
@@ -136,7 +144,7 @@ router.post('/epgs/bind', requireAuth, (req, res) => {
 });
 
 // ============ EPG 节目单下发（供 APK 用） ============
-router.get('/epg', (req, res) => {
+router.get('/epg', rateLimit(), requireDevice, (req, res) => {
   const db = getDb();
   const { id, name } = req.query;
   if (!id && !name) return res.status(400).json({ code: 1, msg: '缺少 id 或 name' });
@@ -148,10 +156,12 @@ router.get('/epg', (req, res) => {
   if (!channels.length) return res.json({ code: 0, data: [] });
   const ids = [...new Set(channels.map(channel => channel.id))];
   const placeholders = ids.map(() => '?').join(',');
+  const names = [...new Set(channels.map(channel => channel.name))];
+  const namePlaceholders = names.map(() => '?').join(',');
   const programs = db.prepare(
-    `SELECT title, start_time, end_time, description FROM programs
-     WHERE channel_id IN (${placeholders}) ORDER BY start_time LIMIT 50`
-  ).all(...ids);
+    `SELECT DISTINCT title, start_time, end_time, description FROM programs
+     WHERE (channel_id IN (${placeholders}) OR channel_name IN (${namePlaceholders})) AND end_time>? AND start_time<? ORDER BY start_time LIMIT 100`
+  ).all(...ids, ...names, Math.floor(Date.now()/1000), Math.floor(Date.now()/1000)+172800);
 
   res.json({ code: 0, data: { channel: channels[0].name, programs } });
 });
@@ -173,8 +183,13 @@ export async function fetchEpgXml(url, timeoutMs = 25000, maxBytes = MAX_XML_BYT
     const cl = res.headers.get('content-length');
     if (cl && +cl > maxBytes) throw new Error(`文件过大 ${(cl / 1024 / 1024).toFixed(0)}MB，超过限制`);
 
-    const buf = await res.arrayBuffer();
-    if (buf.byteLength > maxBytes) throw new Error(`文件过大 ${(buf.byteLength / 1024 / 1024).toFixed(0)}MB，超过限制`);
+    const chunks = []; let bytes = 0;
+    for await (const chunk of res.body) {
+      bytes += chunk.length;
+      if (bytes > maxBytes) { controller.abort(); throw new Error('EPG 文件超过大小限制'); }
+      chunks.push(chunk);
+    }
+    const buf = Buffer.concat(chunks);
 
     // gzip 解压（部分 EPG 源用 gzip 传输）
     let text = Buffer.from(buf).toString('utf8');
@@ -182,7 +197,7 @@ export async function fetchEpgXml(url, timeoutMs = 25000, maxBytes = MAX_XML_BYT
       const b = new Uint8Array(buf);
       if (b[0] === 0x1f && b[1] === 0x8b) {
         const zlib = await import('node:zlib');
-        text = zlib.gunzipSync(Buffer.from(buf)).toString('utf8');
+        text = zlib.gunzipSync(Buffer.from(buf), {maxOutputLength:maxBytes}).toString('utf8');
       }
     }
     return text;
@@ -195,28 +210,39 @@ export async function fetchEpgXml(url, timeoutMs = 25000, maxBytes = MAX_XML_BYT
 export function parseXmltv(xml, maxPrograms = MAX_PROGRAMS) {
   if (!xml) return [];
   const programs = [];
+  const channelNames = new Map();
+  for (const channel of xml.matchAll(/<channel\b([^>]*)>([\s\S]*?)<\/channel>/g)) {
+    const id = xmlAttribute(channel[1], 'id');
+    channelNames.set(id, [...channel[2].matchAll(/<display-name\b[^>]*>([\s\S]*?)<\/display-name>/g)].map(m => xmlText(m[1])));
+  }
   const progRe = /<programme\b[^>]*>([\s\S]*?)<\/programme>/g;
   let m;
   while ((m = progRe.exec(xml)) !== null) {
     if (programs.length >= maxPrograms) break;
     const attrs = m[0].slice(0, m[0].indexOf('>') === -1 ? m[0].length : m[0].indexOf('>'));
     const body = m[1];
-    const start = (attrs.match(/start="([^"]+)"/) || [])[1] || '';
-    const stop = (attrs.match(/stop="([^"]+)"/) || [])[1] || '';
-    const channel = (attrs.match(/channel="([^"]+)"/) || [])[1] || '';
+    const start = xmlAttribute(attrs, 'start');
+    const stop = xmlAttribute(attrs, 'stop');
+    const channel = xmlAttribute(attrs, 'channel');
     const title = (body.match(/<title[^>]*>([\s\S]*?)<\/title>/) || [])[1] || '';
     const desc = (body.match(/<desc[^>]*>([\s\S]*?)<\/desc>/) || [])[1] || '';
-    if (start && title) {
+    if (parseXmltvTime(start) > 0 && parseXmltvTime(stop) > parseXmltvTime(start) && title) {
       programs.push({
         channel: channel.replace(/\.xml$/, ''),
-        title: title.replace(/<!\[CDATA\[|\]\]>/g, '').trim(),
+        names: channelNames.get(channel) || [],
+        title: xmlText(title),
         start: parseXmltvTime(start),
         stop: parseXmltvTime(stop),
-        desc: desc.replace(/<!\[CDATA\[|\]\]>/g, '').trim(),
+        desc: xmlText(desc),
       });
     }
   }
   return programs;
+}
+
+function xmlAttribute(text, key) { return xmlText((text.match(new RegExp('\\b'+key+'=["\u0027]([^"\u0027]*)["\u0027]')) || [])[1] || ''); }
+function xmlText(text) {
+  return text.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,'$1').replace(/&(amp|lt|gt|quot|apos);/g,(_,key)=>({amp:'&',lt:'<',gt:'>',quot:'"',apos:"'"})[key]).trim();
 }
 
 // XMLTV 时间 "20260114080000 +0800" → unix 秒。
@@ -239,6 +265,7 @@ export function buildChannelMatchMap(channels) {
   const map = new Map();
   for (const c of channels) {
     if (c.tvg_id) map.set(normalizeName(c.tvg_id), c.id);
+    if (c.tvg_name) map.set(normalizeName(c.tvg_name), c.id);
     if (c.name) map.set(normalizeName(c.name), c.id);
     const n = normalizeName(c.name);
     if (n) map.set(n, c.id);

@@ -179,13 +179,13 @@
             </div>
           </div>
           <table v-if="epgs.length">
-            <thead><tr><th>名称</th><th>地址</th><th>状态</th><th>最近同步</th><th>操作</th></tr></thead>
+            <thead><tr><th>名称</th><th>地址</th><th>状态</th><th>有效节目</th><th>最近同步</th><th>操作</th></tr></thead>
             <tbody>
               <tr v-for="e in epgs" :key="e.id">
                 <td>{{ e.name }}</td>
                 <td style="max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text2)">{{ e.url }}</td>
                 <td><span class="tag" :class="e.status==='ok' ? 'tag-green' : (e.status==='error' ? 'tag-red' : 'tag-gray')">{{ e.status || 'pending' }}</span></td>
-                <td>{{ e.last_sync ? fmtTime(e.last_sync) : '未同步' }}</td>
+                <td>{{ e.program_count || 0 }} 条 / {{ e.channel_count || 0 }} 个频道</td><td>{{ e.last_sync ? fmtTime(e.last_sync) : '未同步' }}</td>
                 <td><button class="btn btn-danger btn-sm" @click="deleteEpg(e)">删除</button></td>
               </tr>
             </tbody>
@@ -196,12 +196,12 @@
 
       <!-- 点播管理 -->
       <div v-if="tab==='movies'">
-        <div class="page-header"><h2>点播管理</h2><p>资源库接口地址，供播放器拉取点播内容</p></div>
+        <div class="page-header"><h2>点播管理</h2><p>添加你自己的苹果 CMS JSON 接口，APK 2.2 可浏览、搜索、选择线路和集数。支持 HTTP 视频直链，不支持需要网页解析的线路。</p></div>
         <div class="card">
           <h3>新增接口</h3>
           <div class="form-row">
-            <input v-model="newMovie.name" placeholder="资源名称（如 EZ视频网）">
-            <input v-model="newMovie.api" placeholder="接口地址 http://...cms" style="flex:2">
+            <input v-model="newMovie.name" placeholder="资源名称（如 家庭影视库）">
+            <input v-model="newMovie.api" placeholder="接口地址，如 https://你的域名/api.php/provide/vod/" style="flex:2">
             <button class="btn btn-primary" @click="addMovie">添加</button>
           </div>
         </div>
@@ -283,7 +283,7 @@
           <div class="stat"><div class="num">{{ devices.length + unauthorized.length }}</div><div class="label">设备总数</div></div>
           <div class="stat" v-if="clientCfg.needauthor==='1'"><div class="num">{{ unauthorized.length }}</div><div class="label">待授权</div></div>
         </div>
-        <div class="card" v-if="clientCfg.needauthor!=='1'"><h3>家里的设备</h3><p class="wizard-note">当前是家庭模式，设备连接即可观看，无需选择套餐。这里显示曾连接过的手机和电视盒子。</p><table v-if="devices.length+unauthorized.length"><thead><tr><th>设备</th><th>型号</th><th>最近连接</th><th>IP 地址</th></tr></thead><tbody><tr v-for="d in [...devices,...unauthorized]" :key="d.id"><td>{{ d.name || d.device_id }}</td><td>{{ d.model }}</td><td>{{ d.last_time_str || '暂无记录' }}</td><td>{{ d.ip }}</td></tr></tbody></table><div class="empty" v-else>安装 APK 并连接服务器后，设备会出现在这里。</div></div><details><summary style="cursor:pointer;margin-bottom:16px">高级：套餐授权与设备记录</summary><div class="card">
+        <div class="card" v-if="clientCfg.needauthor!=='1'"><h3>家里的设备</h3><p class="wizard-note">当前是家庭模式，设备连接即可观看，无需选择套餐。这里显示曾连接过的手机和电视盒子。</p><table v-if="devices.length+unauthorized.length"><thead><tr><th>设备</th><th>型号</th><th>最近连接</th><th>IP 地址</th></tr></thead><tbody><tr v-for="d in [...devices,...unauthorized]" :key="d.id"><td>{{ d.name || d.device_id }}</td><td>{{ d.model }}</td><td>{{ d.last_time_str || '暂无记录' }}</td><td>{{ d.ip }}</td></tr></tbody></table><div class="empty" v-else>安装 APK 并连接服务器后，设备会出现在这里。</div></div><div class="card"><h3>家庭访问保护</h3><p class="wizard-note">{{ clientCfg.needauthor==='1' ? '已开启保护：新设备需在下方允许后才能获取频道和点播。' : '尚未开启保护，连接地址的人可获取频道。升级后请开启保护，再允许家人的设备。' }}</p><button class="btn btn-primary" v-if="clientCfg.needauthor!=='1'" @click="enableProtection">开启设备授权</button><p class="wizard-note">APK 2.2 首次连接会生成新的设备身份，需重新允许一次。撤销后，已打开的 APK 会在约一分钟内停止播放。此保护不拦截已经泄露的源直链。</p></div><div class="card"><h3>快速允许家人设备</h3><table v-if="devices.length+unauthorized.length"><thead><tr><th>设备 / 型号</th><th>设备 ID</th><th>访问状态</th><th>操作</th></tr></thead><tbody><tr v-for="d in [...unauthorized,...devices]" :key="d.id"><td>{{ d.name }}<small style="display:block;color:var(--text2)">{{ d.model }}</small></td><td style="word-break:break-all">{{ d.device_id }}</td><td>{{ d.exp_days }}</td><td><button v-if="!d.meal_id" class="btn btn-primary btn-sm" @click="familyAccess(d,'approve')">允许观看</button><button v-else class="btn btn-danger btn-sm" @click="familyAccess(d,'revoke')">撤销授权</button></td></tr></tbody></table><div class="empty" v-else>请先在 APK 填写服务器地址并连接，再刷新本页。</div></div><details><summary style="cursor:pointer;margin-bottom:16px">高级：分组授权与设备记录</summary><div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
             <h3 style="margin:0">待授权列表</h3>
             <div class="search-bar" style="margin:0">
@@ -339,8 +339,8 @@
       <section v-if="tab==='client'">
         <div class="page-header"><h2>手机与电视</h2><p>由你配置一次，家人打开就能看。</p></div>
         <div class="dashboard-grid"><div><div class="card"><h3>01 · 连接管理平台</h3><p class="wizard-note">在 APK 首次启动页输入下面的地址。局域网直播源需要手机和盒子连接家里的网络。换域名后，请同时修改已安装 APK 的服务器设置。</p><div class="form-row"><label>服务器地址</label><input v-model="clientCfg.server_url" :placeholder="currentOrigin"></div><button class="btn btn-ghost" @click="clientCfg.server_url=currentOrigin">使用当前访问地址</button></div>
-        <div class="card"><h3>02 · 安装到手机或盒子</h3><p class="wizard-note">Android 7.0 及以上。安卓手机、极光盒子、当贝盒子共用安装包；实际播放能力取决于设备和直播源。</p><div class="form-row"><label>APK 下载地址</label><input v-model="clientCfg.apk_url" placeholder="留空使用官方 2.1.0 安装包"></div><button class="btn btn-blue" @click="buildApk">下载安装包 ↗</button></div>
-        <button class="btn btn-primary" @click="saveClientCfg">保存配置</button></div><div><div class="card"><h3>给家人的操作说明</h3><div class="check-row"><span class="check-bullet done">1</span><div class="grow"><strong>打开就播放</strong><small>记住上次观看的频道</small></div></div><div class="check-row"><span class="check-bullet done">2</span><div class="grow"><strong>上下键换台</strong><small>确认键打开频道列表，返回键继续看</small></div></div><div class="check-row"><span class="check-bullet done">3</span><div class="grow"><strong>长按频道收藏</strong><small>常看频道集中在“我的收藏”</small></div></div></div><div class="card"><h3>设备访问方式</h3><p class="wizard-note">家庭使用建议关闭套餐授权，让家人连接后直接观看。公网访问时，可根据需要开启授权。</p><select v-model="clientCfg.needauthor"><option value="0">家庭模式 · 无需套餐授权</option><option value="1">授权模式 · 按设备和套餐放行</option></select></div></div></div>
+        <div class="card"><h3>02 · 安装到手机或盒子</h3><p class="wizard-note">Android 7.0 及以上。安卓手机、极光盒子、当贝盒子共用安装包；实际播放能力取决于设备和直播源。</p><div class="form-row"><label>APK 下载地址</label><input v-model="clientCfg.apk_url" placeholder="留空使用官方 2.2.0 安装包"></div><button class="btn btn-blue" @click="buildApk">下载安装包 ↗</button></div>
+        <button class="btn btn-primary" @click="saveClientCfg">保存配置</button></div><div><div class="card"><h3>给家人的操作说明</h3><div class="check-row"><span class="check-bullet done">1</span><div class="grow"><strong>打开就播放</strong><small>记住上次观看的频道</small></div></div><div class="check-row"><span class="check-bullet done">2</span><div class="grow"><strong>上下键换台</strong><small>确认键打开频道列表，返回键继续看</small></div></div><div class="check-row"><span class="check-bullet done">3</span><div class="grow"><strong>长按频道收藏</strong><small>常看频道集中在“我的收藏”</small></div></div></div><div class="card"><h3>设备访问方式</h3><p class="wizard-note">建议开启设备授权，在“家庭设备”中一键允许家人使用。已有配置升级时会保留，请手动开启。</p><select v-model="clientCfg.needauthor"><option value="0">开放模式 · 任何设备可连接</option><option value="1">家庭保护 · 仅允许的设备观看</option></select></div></div></div>
       </section>
 
       <!-- 系统公告 -->
@@ -449,7 +449,7 @@ createApp({
       tab: 'dashboard', menuOpen:false,
       navigation:[
         {label:'工作空间',items:[{id:'dashboard',title:'总览',icon:'◫'}]},
-        {label:'内容管理',items:[{id:'sources',title:'直播源',icon:'⌁'},{id:'channels',title:'频道库',icon:'▤'},{id:'epg',title:'节目单 EPG',icon:'◷'},{id:'movies',title:'点播源（高级）',icon:'▷'}]},
+        {label:'内容管理',items:[{id:'sources',title:'直播源',icon:'⌁'},{id:'channels',title:'频道库',icon:'▤'},{id:'epg',title:'节目单 EPG',icon:'◷'},{id:'movies',title:'家庭点播',icon:'▷'}]},
         {label:'家人使用',items:[{id:'client',title:'手机与电视',icon:'▣'},{id:'devices',title:'家庭设备',icon:'⌂'},{id:'m3u',title:'播放地址',icon:'⇩'}]},
         {label:'更多设置',items:[{id:'meals',title:'频道套餐（高级）',icon:'▦'},{id:'notice',title:'公告',icon:'◉'},{id:'settings',title:'设置',icon:'⚙'},{id:'update',title:'版本信息',icon:'↻'}]}
       ],
@@ -668,6 +668,12 @@ createApp({
       catch (e) { this.showToast(e.message, true); }
     },
     // ===== 设备授权 =====
+    async enableProtection() {
+      try { await this.api('/api/client/config',{method:'POST',body:JSON.stringify({needauthor:'1'})});this.clientCfg.needauthor='1';this.showToast('已开启保护，请允许家人的设备'); } catch(e){this.showToast(e.message,true);}
+    },
+    async familyAccess(d,action) {
+      try {await this.api('/api/devices/'+d.id+'/'+action,{method:'POST'});await this.loadAll();this.showToast(action==='approve'?'已允许，APK 按刷新即可观看':'已撤销授权');}catch(e){this.showToast(e.message,true);}
+    },
     checkAllUnauth(e) {
       if (e.target.checked) this.selectedDevices = this.unauthorizedFiltered.map(d => d.device_id);
       else this.selectedDevices = [];
@@ -695,7 +701,7 @@ createApp({
     },
     async buildApk() {
       try {
-        const url=this.clientCfg.apk_url || 'https://github.com/billconan2017/xibao-iptv/releases/download/v2.1.0/xibao-tv-2.1.0.apk';
+        const url=this.clientCfg.apk_url || 'https://github.com/billconan2017/xibao-iptv/releases/download/v2.2.0/xibao-tv-2.2.0.apk';
         if(!/^https?:\/\//i.test(url))throw new Error('请填写完整的 HTTP 或 HTTPS 下载地址');
         window.open(url, '_blank', 'noopener');
       } catch (e) { this.showToast(e.message, true); }

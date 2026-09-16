@@ -9,6 +9,7 @@ import epgRouter from './routes/epg.js';
 import settingsRouter from './routes/settings.js';
 import advancedRouter from './routes/advanced.js';
 import clientRouter from './routes/client.js';
+import vodRouter from './routes/vod.js';
 import { requireAuth } from './auth.js';
 import { restartAllCrons } from './cron.js';
 
@@ -38,6 +39,7 @@ app.use('/api', epgRouter);
 app.use('/api', settingsRouter);
 app.use('/api', advancedRouter);
 app.use('/api', clientRouter);
+app.use('/api', vodRouter);
 
 // 兼容顶层下发接口（无需登录，供 APK 拉取）
 app.use('/', apiRouter);
@@ -61,7 +63,7 @@ app.get('/admin', requireAuth, (req, res) => {
 });
 
 // 健康检查
-app.get('/health', (req, res) => res.json({ status: 'ok', name: 'xibao-server', version: '2.1.0' }));
+app.get('/health', (req, res) => res.json({ status: 'ok', name: 'xibao-server', version: '2.2.0' }));
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ 喜宝IPTV 后端已启动: http://0.0.0.0:${PORT}`);
