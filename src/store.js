@@ -87,6 +87,42 @@ export function initDb() {
       value TEXT DEFAULT ''
     );
 
+    -- 点播资源库
+    CREATE TABLE IF NOT EXISTS movies (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT DEFAULT '',
+      api TEXT NOT NULL,
+      state INTEGER DEFAULT 1,
+      created_at INTEGER DEFAULT (strftime('%s','now'))
+    );
+
+    -- 套餐
+    CREATE TABLE IF NOT EXISTS meals (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      status INTEGER DEFAULT 1,
+      content TEXT DEFAULT '',
+      rss_key TEXT DEFAULT '',
+      created_at INTEGER DEFAULT (strftime('%s','now'))
+    );
+
+    -- 客户端设备（授权）
+    CREATE TABLE IF NOT EXISTS devices (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT DEFAULT '',
+      device_id TEXT DEFAULT '',
+      model TEXT DEFAULT '',
+      ip TEXT DEFAULT '',
+      region TEXT DEFAULT '',
+      meal_id INTEGER DEFAULT 0,
+      author INTEGER DEFAULT 0,
+      marks TEXT DEFAULT '',
+      exp_at INTEGER DEFAULT 0,
+      last_time INTEGER DEFAULT 0,
+      created_at INTEGER DEFAULT (strftime('%s','now')),
+      UNIQUE(device_id)
+    );
+
     CREATE INDEX IF NOT EXISTS idx_channels_group ON channels(group_name);
     CREATE INDEX IF NOT EXISTS idx_channels_enabled ON channels(enabled);
   `);
@@ -109,6 +145,24 @@ function seedDefaults() {
   const defaults = {
     site_name: '喜宝IPTV',
     apk_url: '', // APK 下载地址，留空则用内置默认
+    // 客户端编译配置
+    client_server_url: '',
+    client_packagename: 'com.xibao.iptv',
+    client_appname: '喜宝IPTV',
+    client_version: '1.0.1',
+    client_needauthor: '0',
+    client_decoder: '3',
+    client_bufftimeout: '10',
+    // 应用提示文案
+    tip_loading: '正在加载...',
+    tip_userexpired: '订阅已过期',
+    tip_userforbidden: '设备已被禁用',
+    tip_usernoreg: '设备未授权',
+    // 系统公告
+    ad_text: '',
+    ad_showtime: '5',
+    ad_showinterval: '30',
+    version: '1.1.0',
   };
   const insert = db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)');
   for (const [k, v] of Object.entries(defaults)) {

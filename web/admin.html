@@ -116,7 +116,13 @@ pre.code { background: var(--bg2); padding: 16px; border-radius: 8px; font-size:
         <div class="nav-item" :class="{active: tab==='channels'}" @click="tab='channels'"><span class="ico">📡</span>频道管理</div>
         <div class="nav-item" :class="{active: tab==='sources'}" @click="tab='sources'"><span class="ico">🔗</span>直播源</div>
         <div class="nav-item" :class="{active: tab==='epg'}" @click="tab='epg'"><span class="ico">📅</span>EPG 节目单</div>
+        <div class="nav-item" :class="{active: tab==='movies'}" @click="tab='movies'"><span class="ico">🎬</span>点播管理</div>
+        <div class="nav-item" :class="{active: tab==='meals'}" @click="tab='meals'"><span class="ico">💳</span>套餐管理</div>
+        <div class="nav-item" :class="{active: tab==='devices'}" @click="tab='devices'"><span class="ico">📱</span>设备授权</div>
+        <div class="nav-item" :class="{active: tab==='client'}" @click="tab='client'"><span class="ico">📦</span>客户端设置</div>
+        <div class="nav-item" :class="{active: tab==='notice'}" @click="tab='notice'"><span class="ico">📢</span>系统公告</div>
         <div class="nav-item" :class="{active: tab==='m3u'}" @click="tab='m3u'"><span class="ico">📤</span>M3U 下发</div>
+        <div class="nav-item" :class="{active: tab==='update'}" @click="tab='update'"><span class="ico">🔄</span>系统更新</div>
         <div class="nav-item" :class="{active: tab==='settings'}" @click="tab='settings'"><span class="ico">⚙️</span>系统设置</div>
       </div>
       <div class="foot">
@@ -252,6 +258,206 @@ pre.code { background: var(--bg2); padding: 16px; border-radius: 8px; font-size:
         </div>
       </div>
 
+      <!-- 点播管理 -->
+      <div v-if="tab==='movies'">
+        <div class="page-header"><h2>点播管理</h2><p>资源库接口地址，供播放器拉取点播内容</p></div>
+        <div class="card">
+          <h3>新增接口</h3>
+          <div class="form-row">
+            <input v-model="newMovie.name" placeholder="资源名称（如 EZ视频网）">
+            <input v-model="newMovie.api" placeholder="接口地址 http://...cms" style="flex:2">
+            <button class="btn btn-primary" @click="addMovie">添加</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3>资源库列表</h3>
+          <table v-if="movies.length">
+            <thead><tr><th>ID</th><th>资源名称</th><th>状态</th><th>接口地址</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr v-for="m in movies" :key="m.id">
+                <td>{{ m.id }}</td>
+                <td>{{ m.name }}</td>
+                <td><span class="tag" :class="m.state ? 'tag-green' : 'tag-red'">{{ m.state ? '上线' : '下线' }}</span></td>
+                <td style="max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text2)">{{ m.api }}</td>
+                <td>
+                  <button class="btn btn-ghost btn-sm" @click="toggleMovie(m)">{{ m.state ? '下线' : '上线' }}</button>
+                  <button class="btn btn-danger btn-sm" @click="deleteMovie(m)">删除</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="empty" v-else>暂无点播数据</div>
+        </div>
+      </div>
+
+      <!-- 套餐管理 -->
+      <div v-if="tab==='meals'">
+        <div class="page-header"><h2>套餐管理</h2><p>套餐绑定频道分组，生成订阅链接</p></div>
+        <div class="card">
+          <h3>新增套餐</h3>
+          <div class="form-row">
+            <input v-model="newMeal.name" placeholder="套餐名称">
+            <button class="btn btn-primary" @click="addMeal">添加</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3>套餐列表</h3>
+          <table v-if="meals.length">
+            <thead><tr><th>ID</th><th>名称</th><th>状态</th><th>收视内容</th><th style="width:260px">操作</th></tr></thead>
+            <tbody>
+              <tr v-for="m in meals" :key="m.id">
+                <td>{{ m.id }}</td>
+                <td>{{ m.name }}</td>
+                <td><span class="tag" :class="m.status ? 'tag-green' : 'tag-red'">{{ m.status ? '上线' : '下线' }}</span></td>
+                <td style="color:var(--text2)">{{ m.ca_name || '全部频道' }}</td>
+                <td>
+                  <button class="btn btn-ghost btn-sm" @click="toggleMeal(m)">{{ m.status ? '下线' : '上线' }}</button>
+                  <button class="btn btn-blue btn-sm" @click="showRss(m)">订阅</button>
+                  <button class="btn btn-danger btn-sm" @click="deleteMeal(m)">删除</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="empty" v-else>暂无套餐</div>
+        </div>
+        <!-- 订阅弹窗 -->
+        <div class="card" v-if="rssMeal">
+          <h3>订阅：{{ rssMeal.name }}</h3>
+          <div class="form-row" style="align-items:center">
+            <label>TXT 订阅：</label>
+            <input :value="rssUrl" readonly style="font-family:monospace; flex:2">
+            <button class="btn btn-blue" @click="copy(rssUrl)">复制</button>
+          </div>
+          <div style="margin:10px 0">
+            <button class="btn btn-ghost" @click="refreshRssKey">🔄 刷新 KEY（旧链接将失效）</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 设备授权 -->
+      <div v-if="tab==='devices'">
+        <div class="page-header"><h2>设备授权</h2><p>客户端设备管理与授权</p></div>
+        <div class="stats">
+          <div class="stat"><div class="num">{{ devices.length }}</div><div class="label">设备总数</div></div>
+          <div class="stat"><div class="num">{{ unauthorized.length }}</div><div class="label">待授权</div></div>
+        </div>
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
+            <h3 style="margin:0">待授权列表</h3>
+            <div class="search-bar" style="margin:0">
+              <input v-model="deviceSearch" placeholder="搜索设备..." style="width:220px">
+            </div>
+          </div>
+          <table v-if="unauthorizedFiltered.length">
+            <thead><tr><th style="width:30px"><input type="checkbox" @change="checkAllUnauth" v-model="checkAll"></th><th>账号</th><th>设备ID</th><th>型号</th><th>IP</th><th>地区</th><th>状态</th><th>最后登录</th></tr></thead>
+            <tbody>
+              <tr v-for="d in unauthorizedFiltered" :key="d.id">
+                <td><input type="checkbox" :value="d.device_id" v-model="selectedDevices"></td>
+                <td>{{ d.name }}</td>
+                <td style="color:var(--text2)">{{ d.device_id }}</td>
+                <td>{{ d.model }}</td>
+                <td>{{ d.ip }}</td>
+                <td>{{ d.region }}</td>
+                <td><span class="tag tag-red">{{ d.exp_days }}</span></td>
+                <td>{{ d.last_time_str }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="empty" v-else>{{ deviceSearch ? '无匹配设备' : '暂无待授权设备' }}</div>
+          <div v-if="selectedDevices.length" style="margin-top:12px; display:flex; gap:12px; align-items:center">
+            <span>已选 {{ selectedDevices.length }} 台：</span>
+            <select v-model="batchMeal" style="width:160px"><option value="">选择套餐</option><option v-for="m in meals" :value="m.id" :key="m.id">{{ m.name }}</option></select>
+            <input v-model.number="batchDays" type="number" placeholder="授权天数" style="width:120px">
+            <button class="btn btn-primary" @click="batchAuth">批量授权</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3>已授权设备</h3>
+          <table v-if="devices.length">
+            <thead><tr><th>账号</th><th>套餐</th><th>设备ID</th><th>型号</th><th>IP</th><th>地区</th><th>到期</th><th>备注</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr v-for="d in devices" :key="d.id">
+                <td>{{ d.name }}</td>
+                <td><span class="tag tag-gray">{{ d.meal_name || '无' }}</span></td>
+                <td style="color:var(--text2)">{{ d.device_id }}</td>
+                <td>{{ d.model }}</td>
+                <td>{{ d.ip }}</td>
+                <td>{{ d.region }}</td>
+                <td><span class="tag" :class="d.exp_days.startsWith('-') || d.exp_days==='已过期' ? 'tag-red' : 'tag-green'">{{ d.exp_days }}</span></td>
+                <td>{{ d.marks }}</td>
+                <td><button class="btn btn-danger btn-sm" @click="deleteDevice(d)">删除</button></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="empty" v-else>暂无已授权设备</div>
+        </div>
+      </div>
+
+      <!-- 客户端设置 -->
+      <div v-if="tab==='client'">
+        <div class="page-header"><h2>客户端编译配置</h2><p>自定义 APK 连接信息与默认设置</p></div>
+        <div class="card">
+          <h3>编译配置</h3>
+          <div class="form-row"><label>APK 连接地址：</label><input v-model="clientCfg.server_url" placeholder="http://服务器地址"></div>
+          <div class="form-row">
+            <input v-model="clientCfg.packagename" placeholder="应用包名" style="flex:2">
+            <input v-model="clientCfg.appname" placeholder="应用名">
+            <input v-model="clientCfg.version" placeholder="版本号">
+          </div>
+        </div>
+        <div class="card">
+          <h3>应用默认设置</h3>
+          <div class="form-row">
+            <label>解码器：</label>
+            <select v-model="clientCfg.decoder"><option value="1">软解</option><option value="2">硬解</option><option value="3">自动</option></select>
+            <label>缓冲超时(秒)：</label>
+            <input v-model="clientCfg.bufftimeout" type="number">
+            <label>需要授权：</label>
+            <select v-model="clientCfg.needauthor"><option value="0">否</option><option value="1">是</option></select>
+          </div>
+        </div>
+        <div class="card">
+          <h3>应用提示文案</h3>
+          <div class="form-row"><input v-model="tips.loading" placeholder="加载提示"><input v-model="tips.user_expired" placeholder="过期提示"></div>
+          <div class="form-row"><input v-model="tips.user_forbidden" placeholder="禁用提示"><input v-model="tips.user_noreg" placeholder="未授权提示"></div>
+        </div>
+        <button class="btn btn-primary" @click="saveClientCfg">保存客户端配置</button>
+      </div>
+
+      <!-- 系统公告 -->
+      <div v-if="tab==='notice'">
+        <div class="page-header"><h2>系统公告</h2><p>客户端启动时显示的公告</p></div>
+        <div class="card">
+          <h3>公告内容</h3>
+          <div class="form-row"><textarea v-model="ad.adtext" rows="4" placeholder="请输入公告内容" style="width:100%; background:var(--bg2); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:12px"></textarea></div>
+          <div class="form-row">
+            <label>显示时间（秒）：</label><input v-model.number="ad.showtime" type="number">
+            <label>显示间隔（分）：</label><input v-model.number="ad.showinterval" type="number">
+          </div>
+          <button class="btn btn-primary" @click="saveNotice">保存公告</button>
+        </div>
+      </div>
+
+      <!-- 系统更新 -->
+      <div v-if="tab==='update'">
+        <div class="page-header"><h2>系统更新</h2><p>当前版本信息</p></div>
+        <div class="card">
+          <div class="form-row" style="align-items:center">
+            <label>当前版本：</label>
+            <input :value="updateInfo.version" readonly style="width:200px">
+            <span class="muted" v-if="!updateInfo.has_update">已是最新版本</span>
+            <span class="tag tag-green" v-else>发现新版本 {{ updateInfo.latest }}</span>
+          </div>
+          <div style="margin-top:16px">
+            <h3>升级日志</h3>
+            <table v-if="changelog.length">
+              <thead><tr><th>版本</th><th>日期</th><th>说明</th></tr></thead>
+              <tbody><tr v-for="c in changelog" :key="c.version"><td>{{ c.version }}</td><td>{{ c.date }}</td><td>{{ c.desc }}</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <!-- M3U 下发 -->
       <div v-if="tab==='m3u'">
         <div class="page-header"><h2>M3U 下发</h2><p>把这些地址填入播放器即可拉取全部频道</p></div>
@@ -318,9 +524,19 @@ createApp({
       username: '',
       tab: 'dashboard',
       channels: [], sources: [], groups: [], epgs: [],
+      movies: [], meals: [], devices: [], unauthorized: [],
       newChannel: { name: '', url: '', group_name: '', tvg_logo: '' },
       newSource: { name: '', url: '' },
       newEpg: { name: '', url: '' },
+      newMovie: { name: '', api: '' },
+      newMeal: { name: '' },
+      clientCfg: { server_url: '', packagename: 'com.xibao.iptv', appname: '喜宝IPTV', version: '1.0.1', needauthor: '0', decoder: '3', bufftimeout: '10' },
+      tips: { loading: '', user_expired: '', user_forbidden: '', user_noreg: '' },
+      ad: { adtext: '', showtime: 5, showinterval: 30 },
+      updateInfo: { version: '', latest: '', has_update: false },
+      changelog: [],
+      rssMeal: null, rssUrl: '',
+      deviceSearch: '', checkAll: false, selectedDevices: [], batchMeal: '', batchDays: 30,
       settings: { site_name: '喜宝IPTV', apk_url: '' },
       pwd: { old: '', new1: '', new2: '' },
       search: '', filterGroup: '',
@@ -339,6 +555,11 @@ createApp({
     m3uUrl() { return location.origin + '/m3u'; },
     m3uTxtUrl() { return location.origin + '/api/m3u.txt'; },
     jsonUrl() { return location.origin + '/api/channels.json'; },
+    unauthorizedFiltered() {
+      if (!this.deviceSearch) return this.unauthorized;
+      const s = this.deviceSearch;
+      return this.unauthorized.filter(d => (d.name || '').includes(s) || (d.device_id || '').includes(s) || (d.model || '').includes(s));
+    },
   },
   async mounted() {
     // 检查登录态
@@ -368,8 +589,24 @@ createApp({
         this.sources = await this.api('/api/sources') || [];
         this.groups = await this.api('/api/groups') || [];
         this.epgs = await this.api('/api/epgs') || [];
+        this.movies = await this.api('/api/movies') || [];
+        this.meals = await this.api('/api/meals') || [];
+        this.devices = await this.api('/api/devices') || [];
+        this.unauthorized = await this.api('/api/devices/unauthorized') || [];
         const s = await this.api('/api/settings');
         if (s) this.settings = s;
+        const cc = await this.api('/api/client/config');
+        if (cc) this.clientCfg = cc;
+        const n = await this.api('/api/notice');
+        if (n) this.ad = { adtext: n.adtext, showtime: Number(n.showtime), showinterval: Number(n.showinterval) };
+        const pub = await fetch('/api/client/config/public').then(r => r.json());
+        if (pub.code === 0 && pub.data) {
+          this.tips = pub.data.tips || this.tips;
+        }
+        const u = await this.api('/api/update');
+        if (u) this.updateInfo = u;
+        const a = await this.api('/api/about');
+        if (a) this.changelog = a.changelog || [];
       } catch (e) { this.showToast(e.message, true); }
     },
     async addChannel() {
@@ -411,6 +648,72 @@ createApp({
         this.showToast('EPG 同步完成，共 ' + r.total + ' 条节目');
       } catch (e) { this.showToast('同步失败: ' + e.message, true); }
       finally { this.epgSyncing = false; }
+    },
+    // ===== 点播 =====
+    async addMovie() {
+      if (!this.newMovie.api) return this.showToast('请填写接口地址', true);
+      try { await this.api('/api/movies', { method: 'POST', body: JSON.stringify(this.newMovie) }); this.newMovie = { name: '', api: '' }; await this.loadAll(); this.showToast('已添加'); }
+      catch (e) { this.showToast(e.message, true); }
+    },
+    async toggleMovie(m) {
+      try { await this.api('/api/movies/' + m.id, { method: 'PUT', body: JSON.stringify({ state: m.state ? 0 : 1 }) }); await this.loadAll(); }
+      catch (e) { this.showToast(e.message, true); }
+    },
+    async deleteMovie(m) {
+      if (!confirm(`删除点播「${m.name}」？`)) return;
+      try { await this.api('/api/movies/' + m.id, { method: 'DELETE' }); await this.loadAll(); }
+      catch (e) { this.showToast(e.message, true); }
+    },
+    // ===== 套餐 =====
+    async addMeal() {
+      if (!this.newMeal.name) return this.showToast('请填写套餐名称', true);
+      try { await this.api('/api/meals', { method: 'POST', body: JSON.stringify(this.newMeal) }); this.newMeal = { name: '' }; await this.loadAll(); this.showToast('已添加'); }
+      catch (e) { this.showToast(e.message, true); }
+    },
+    async toggleMeal(m) {
+      try { await this.api('/api/meals/' + m.id, { method: 'PUT', body: JSON.stringify({ status: m.status ? 0 : 1 }) }); await this.loadAll(); }
+      catch (e) { this.showToast(e.message, true); }
+    },
+    async deleteMeal(m) {
+      if (!confirm(`删除套餐「${m.name}」？`)) return;
+      try { await this.api('/api/meals/' + m.id, { method: 'DELETE' }); await this.loadAll(); }
+      catch (e) { this.showToast(e.message, true); }
+    },
+    showRss(m) { this.rssMeal = m; this.rssUrl = location.origin + '/api/rss/' + m.rss_key; },
+    async refreshRssKey() {
+      if (!this.rssMeal) return;
+      try { const r = await this.api('/api/meals/' + this.rssMeal.id + '/rsskey', { method: 'POST' }); this.rssMeal.rss_key = r.rss_key; this.rssUrl = location.origin + '/api/rss/' + r.rss_key; this.showToast('KEY 已刷新'); }
+      catch (e) { this.showToast(e.message, true); }
+    },
+    // ===== 设备授权 =====
+    checkAllUnauth(e) {
+      if (e.target.checked) this.selectedDevices = this.unauthorizedFiltered.map(d => d.device_id);
+      else this.selectedDevices = [];
+    },
+    async batchAuth() {
+      if (!this.selectedDevices.length) return this.showToast('未选中设备', true);
+      if (!this.batchMeal) return this.showToast('请选择套餐', true);
+      try {
+        await this.api('/api/devices/batch', { method: 'POST', body: JSON.stringify({ ids: this.selectedDevices, meal_id: this.batchMeal, exp_days: this.batchDays }) });
+        this.selectedDevices = []; this.checkAll = false; await this.loadAll(); this.showToast('授权成功');
+      } catch (e) { this.showToast(e.message, true); }
+    },
+    async deleteDevice(d) {
+      if (!confirm(`删除设备「${d.device_id}」？`)) return;
+      try { await this.api('/api/devices/' + d.id, { method: 'DELETE' }); await this.loadAll(); }
+      catch (e) { this.showToast(e.message, true); }
+    },
+    // ===== 客户端设置 =====
+    async saveClientCfg() {
+      try {
+        await this.api('/api/client/config', { method: 'POST', body: JSON.stringify(this.clientCfg) });
+        await this.api('/api/client/tips', { method: 'POST', body: JSON.stringify(this.tips) });
+        this.showToast('已保存');
+      } catch (e) { this.showToast(e.message, true); }
+    },
+    async saveNotice() {
+      try { await this.api('/api/notice', { method: 'POST', body: JSON.stringify(this.ad) }); this.showToast('公告已保存'); }
+      catch (e) { this.showToast(e.message, true); }
     },
     async deleteChannel(ch) {
       if (!confirm(`删除频道「${ch.name}」？`)) return;

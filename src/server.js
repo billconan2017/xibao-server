@@ -7,6 +7,8 @@ import apiRouter from './routes/api.js';
 import authRouter from './routes/auth.js';
 import epgRouter from './routes/epg.js';
 import settingsRouter from './routes/settings.js';
+import advancedRouter from './routes/advanced.js';
+import clientRouter from './routes/client.js';
 import { requireAuth } from './auth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -30,9 +32,12 @@ app.use('/api', apiRouter);
 app.use('/api', authRouter);
 app.use('/api', epgRouter);
 app.use('/api', settingsRouter);
+app.use('/api', advancedRouter);
+app.use('/api', clientRouter);
 
 // 兼容顶层下发接口（无需登录，供 APK 拉取）
 app.use('/', apiRouter);
+app.use('/', advancedRouter);
 
 // ============ 页面路由 ============
 
