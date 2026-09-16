@@ -160,10 +160,10 @@ function migrate() {
 }
 
 function seedDefaults() {
-  // 默认管理员 cjc / 365759630
+  // 默认管理员 cjc / admin123
   const existing = db.prepare('SELECT COUNT(*) as c FROM users').get();
   if (existing.c === 0) {
-    const hash = hashPassword('365759630');
+    const hash = hashPassword('admin123');
     db.prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)').run('cjc', hash);
   }
 
