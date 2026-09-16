@@ -2,7 +2,7 @@
 import { getDb, getSetting } from './store.js';
 import { syncAllSources } from './source.js';
 import { parseM3U, generateM3U, mergeChannels } from './m3u.js';
-import { fetchEpgXml, parseXmltv, buildChannelMatchMap, normalizeName } from './routes/epg.js';
+import { syncEpgInternal } from './routes/epg.js';
 
 let channelTimer = null;
 let epgTimer = null;
@@ -61,35 +61,8 @@ export function startEpgCron() {
     try {
       console.log('[Cron] 开始定时更新 EPG...');
       const db = getDb();
-      const epgs = db.prepare('SELECT * FROM epgs WHERE enabled=1').all();
-      const programInsert = db.prepare(
-        `INSERT INTO programs (epg_id, channel_id, title, start_time, end_time, description)
-         VALUES (?, ?, ?, ?, ?, ?)`
-      );
-      // 清空旧节目
-      db.prepare('DELETE FROM programs').run();
-      const channels = db.prepare('SELECT * FROM channels').all();
-      let total = 0;
-
-      for (const epg of epgs) {
-        try {
-          const text = await fetchEpgXml(epg.url);
-          const programs = parseXmltv(text);
-          const chMap = buildChannelMatchMap(channels);
-          for (const p of programs) {
-            const chId = chMap.get(p.channel) || chMap.get(normalizeName(p.channel)) || null;
-            if (chId) {
-              programInsert.run(epg.id, chId, p.title, p.start, p.stop, p.desc || '');
-              total++;
-            }
-          }
-          db.prepare('UPDATE epgs SET status=?, last_sync=? WHERE id=?').run('ok', Date.now() / 1000 | 0, epg.id);
-        } catch (e) {
-          console.error(`[Cron] EPG 源 ${epg.name} 同步失败:`, e.message);
-          db.prepare('UPDATE epgs SET status=? WHERE id=?').run('error', epg.id);
-        }
-      }
-      console.log(`[Cron] EPG 定时更新完成: ${total} 条节目`);
+      const data = await syncEpgInternal(db);
+      console.log(`[Cron] EPG 定时更新完成: ${data.total} 条节目`);
     } catch (e) {
       console.error('[Cron] EPG 定时更新失败:', e.message);
     } finally {

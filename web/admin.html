@@ -723,7 +723,7 @@ createApp({
       this.epgSyncing = true;
       try {
         const r = await this.api('/api/epgs/sync', { method: 'POST' });
-        this.showToast('EPG 同步完成，共 ' + r.total + ' 条节目');
+        this.showToast(r && r.async ? (r.msg || '已开始同步 EPG，请稍后刷新查看') : ('EPG 同步完成，共 ' + (r.total || 0) + ' 条节目'));
       } catch (e) { this.showToast('同步失败: ' + e.message, true); }
       finally { this.epgSyncing = false; }
     },
