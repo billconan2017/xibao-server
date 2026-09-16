@@ -707,8 +707,15 @@ createApp({
     async syncAll() {
       this.syncing = true;
       try {
-        const r = await this.api('/api/sync', { method: 'POST' });
-        await this.loadAll(); this.showToast('同步完成，共 ' + r.count + ' 个频道');
+        const d = await this.api('/api/sync', { method: 'POST' });
+        await this.loadAll();
+        if (!d || d.urlSourceCount === 0) {
+          this.showToast('没有远程 URL 源可同步。上传的文件已直接导入，不需要同步。');
+        } else if (d.ok === d.urlSourceCount) {
+          this.showToast(`同步完成：共 ${d.total} 个频道（${d.urlSourceCount} 个源全部成功）`);
+        } else {
+          this.showToast(`同步完成：${d.ok} 成功 / ${d.fail} 失败，共 ${d.total} 个频道`);
+        }
       } catch (e) { this.showToast('同步失败: ' + e.message, true); }
       finally { this.syncing = false; }
     },

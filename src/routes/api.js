@@ -1,7 +1,7 @@
 // API 路由
 import express from 'express';
 import { getDb } from '../store.js';
-import { parseM3U, mergeChannels, generateM3U } from '../m3u.js';
+import { parseM3U, parsePlaylist, mergeChannels, generateM3U } from '../m3u.js';
 import { syncAllSources } from '../source.js';
 import { requireAuth } from '../auth.js';
 
@@ -115,14 +115,14 @@ router.post('/sources', requireAuth, (req, res) => {
   if (!url && !content) return res.status(400).json({ code: 1, msg: '请填写 M3U 地址或上传文件' });
 
   if (content) {
-    // 上传的 M3U 内容 → 直接入库作为文件源
+    // 上传的 M3U/TXT 内容 → 直接入库作为文件源（自动识别格式）
     const sourceName = name || '上传文件 ' + new Date().toLocaleString('zh-CN');
     const key = 'file_' + Date.now();
     const info = db.prepare(
       `INSERT INTO sources (name, url, type) VALUES (?, ?, ?)`
     ).run(sourceName, key, 'upload');
-    // 解析内容并写入频道
-    const channels = parseM3U(content);
+    // 解析内容并写入频道（自动识别 m3u8 / txt #genre#）
+    const channels = parsePlaylist(content);
     const insertCh = db.prepare(
       `INSERT INTO channels (name, url, group_name, tvg_id, tvg_logo, tvg_name, source_id, sort_order)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
@@ -137,7 +137,7 @@ router.post('/sources', requireAuth, (req, res) => {
       db.exec('ROLLBACK');
       throw e;
     }
-    db.prepare('UPDATE sources SET channel_count=? WHERE id=?').run(channels.length, info.lastInsertRowid);
+    db.prepare('UPDATE sources SET channel_count=?, status=?, last_sync=? WHERE id=?').run(channels.length, 'ok', Date.now() / 1000 | 0, info.lastInsertRowid);
     return res.json({ code: 0, data: { id: info.lastInsertRowid, count: channels.length } });
   }
 
@@ -193,9 +193,8 @@ router.post('/sync', requireAuth, async (req, res) => {
       updateSrc.run(s.channel_count || 0, s.status || 'ok', s.last_sync || 0, s.id);
     }
 
-    // 只清除 URL 源导入的频道（source_id != upload 源），保留上传导入的频道
-    const uploadIds = allSources.filter(s => s.type === 'upload').map(s => s.id);
-    const clearCh = db.prepare('DELETE FROM channels WHERE source_id NOT IN (SELECT id FROM sources WHERE type=\'upload\')');
+    // 只清除 URL 源导入的频道（source_id 为 0 或对应 URL 源），保留上传导入的频道
+    const clearCh = db.prepare('DELETE FROM channels WHERE source_id = 0 OR source_id NOT IN (SELECT id FROM sources WHERE type=\'upload\')');
     const insertCh = db.prepare(
       `INSERT INTO channels (name, url, group_name, tvg_id, tvg_logo, tvg_name, source_id, sort_order)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
@@ -213,7 +212,28 @@ router.post('/sync', requireAuth, async (req, res) => {
       throw e;
     }
 
-    res.json({ code: 0, data: { count: merged.length, skippedUpload: uploadIds.length } });
+    // 构造清晰的返回结果
+    const details = urlSources.map(s => ({
+      id: s.id,
+      name: s.name,
+      status: s.status,
+      count: s.channel_count || 0,
+      last_sync: s.last_sync
+    }));
+    const ok = urlSources.filter(s => s.status === 'ok').length;
+    const fail = urlSources.filter(s => s.status === 'error').length;
+
+    res.json({
+      code: 0,
+      data: {
+        total: merged.length,
+        urlSourceCount: urlSources.length,
+        uploadSourceCount: allSources.length - urlSources.length,
+        ok,
+        fail,
+        details
+      }
+    });
   } catch (e) {
     res.status(500).json({ code: 1, msg: String(e.message || e) });
   }
