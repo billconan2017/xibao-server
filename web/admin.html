@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理后台 · 喜宝IPTV</title>
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0f1115; --bg2: #1a1d24; --card: #1f232c; --border: #2a2f3a;
+  --text: #e6e8eb; --text2: #9aa0ab; --accent: #ff6b35; --accent2: #4f8cff;
+  --green: #2ecc71; --red: #e74c3c;
+}
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
+a { color: var(--accent2); text-decoration: none; }
+.layout { display: flex; min-height: 100vh; }
+
+/* 侧边栏 */
+.sidebar {
+  width: 220px; background: var(--bg2); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; flex-shrink: 0; position: sticky; top: 0; height: 100vh;
+}
+.sidebar .brand { padding: 18px 20px; font-size: 18px; font-weight: 700; border-bottom: 1px solid var(--border); }
+.sidebar .brand span { color: var(--accent); }
+.side-nav { flex: 1; overflow-y: auto; padding: 12px 0; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px; padding: 11px 20px; cursor: pointer;
+  color: var(--text2); font-size: 14px; transition: all .15s; border-left: 3px solid transparent;
+}
+.nav-item:hover { color: var(--text); background: var(--card); }
+.nav-item.active { color: var(--text); background: var(--card); border-left-color: var(--accent); font-weight: 600; }
+.nav-item .ico { width: 20px; text-align: center; }
+.sidebar .foot { padding: 14px 20px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text2); }
+.sidebar .foot a { color: var(--accent2); cursor: pointer; }
+
+/* 内容区 */
+.main { flex: 1; padding: 24px; min-width: 0; }
+.page-header { margin-bottom: 24px; }
+.page-header h2 { font-size: 22px; margin-bottom: 4px; }
+.page-header p { color: var(--text2); font-size: 13px; }
+
+/* 统计卡片 */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.stat { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; text-align: center; }
+.stat .num { font-size: 26px; font-weight: 700; color: var(--accent); }
+.stat .label { font-size: 13px; color: var(--text2); margin-top: 4px; }
+
+.card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+  padding: 20px; margin-bottom: 20px;
+}
+.card h3 { font-size: 16px; margin-bottom: 16px; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px;
+  border-radius: 8px; border: none; cursor: pointer; font-size: 14px; font-weight: 500;
+  transition: opacity .15s; white-space: nowrap;
+}
+.btn:hover { opacity: .85; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-blue { background: var(--accent2); color: #fff; }
+.btn-green { background: var(--green); color: #fff; }
+.btn-danger { background: var(--red); color: #fff; }
+.btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text2); }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+
+input, select {
+  background: var(--bg2); border: 1px solid var(--border); color: var(--text);
+  padding: 9px 12px; border-radius: 8px; font-size: 14px; width: 100%;
+}
+input:focus, select:focus { outline: none; border-color: var(--accent2); }
+input[readonly] { background: var(--bg); color: var(--text2); }
+.form-row { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+.form-row > * { flex: 1; min-width: 140px; }
+.form-row label { font-size: 13px; color: var(--text2); align-self: center; flex: 0 0 auto; }
+
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+th { color: var(--text2); font-weight: 500; font-size: 13px; }
+tr:hover td { background: var(--bg2); }
+.logo-cell { display: flex; align-items: center; gap: 10px; }
+.logo-cell img { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; background: #333; }
+.tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; margin-right: 4px; }
+.tag-green { background: rgba(46,204,113,.15); color: var(--green); }
+.tag-red { background: rgba(231,76,60,.15); color: var(--red); }
+.tag-gray { background: rgba(154,160,171,.15); color: var(--text2); }
+.empty { text-align: center; padding: 40px; color: var(--text2); }
+.search-bar { display: flex; gap: 12px; margin-bottom: 16px; }
+.group-pill {
+  display: inline-block; padding: 5px 12px; border-radius: 16px; margin: 0 6px 6px 0;
+  background: var(--card); border: 1px solid var(--border); cursor: pointer; font-size: 13px;
+}
+.group-pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+.toast {
+  position: fixed; bottom: 24px; right: 24px; padding: 14px 20px; border-radius: 8px;
+  background: var(--green); color: #fff; font-size: 14px; z-index: 100;
+  box-shadow: 0 4px 16px rgba(0,0,0,.3); animation: slideIn .3s;
+}
+.toast.error { background: var(--red); }
+@keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+pre.code { background: var(--bg2); padding: 16px; border-radius: 8px; font-size: 12px; overflow: auto; white-space: pre-wrap; }
+.muted { color: var(--text2); font-size: 13px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="layout" v-if="authed">
+    <!-- 侧边栏 -->
+    <div class="sidebar">
+      <div class="brand">📺 喜宝<span>IPTV</span></div>
+      <div class="side-nav">
+        <div class="nav-item" :class="{active: tab==='dashboard'}" @click="tab='dashboard'"><span class="ico">📊</span>首页</div>
+        <div class="nav-item" :class="{active: tab==='channels'}" @click="tab='channels'"><span class="ico">📡</span>频道管理</div>
+        <div class="nav-item" :class="{active: tab==='sources'}" @click="tab='sources'"><span class="ico">🔗</span>直播源</div>
+        <div class="nav-item" :class="{active: tab==='epg'}" @click="tab='epg'"><span class="ico">📅</span>EPG 节目单</div>
+        <div class="nav-item" :class="{active: tab==='m3u'}" @click="tab='m3u'"><span class="ico">📤</span>M3U 下发</div>
+        <div class="nav-item" :class="{active: tab==='settings'}" @click="tab='settings'"><span class="ico">⚙️</span>系统设置</div>
+      </div>
+      <div class="foot">
+        <div style="margin-bottom:6px">👤 {{ username }}</div>
+        <a @click="logout">退出登录</a> · <a href="/">下载 APK</a>
+      </div>
+    </div>
+
+    <!-- 内容 -->
+    <div class="main">
+      <!-- Dashboard -->
+      <div v-if="tab==='dashboard'">
+        <div class="page-header"><h2>控制台</h2><p>系统概览</p></div>
+        <div class="stats">
+          <div class="stat"><div class="num">{{ channels.length }}</div><div class="label">频道总数</div></div>
+          <div class="stat"><div class="num">{{ groups.length }}</div><div class="label">分组数</div></div>
+          <div class="stat"><div class="num">{{ sources.length }}</div><div class="label">直播源</div></div>
+          <div class="stat"><div class="num">{{ epgs.length }}</div><div class="label">EPG 源</div></div>
+          <div class="stat"><div class="num">{{ enabledCount }}</div><div class="label">启用频道</div></div>
+        </div>
+        <div class="card">
+          <h3>分组统计</h3>
+          <div v-if="groups.length">
+            <span class="group-pill" v-for="g in groups" :key="g.group_name">{{ g.group_name }} ({{ g.count }})</span>
+          </div>
+          <div class="empty" v-else>暂无数据</div>
+        </div>
+      </div>
+
+      <!-- 频道管理 -->
+      <div v-if="tab==='channels'">
+        <div class="page-header"><h2>频道管理</h2><p>增删改查、分组、台标、启停</p></div>
+        <div class="card">
+          <h3>新增频道</h3>
+          <div class="form-row">
+            <input v-model="newChannel.name" placeholder="频道名称">
+            <input v-model="newChannel.url" placeholder="流地址 http://..." style="flex:2">
+            <input v-model="newChannel.group_name" placeholder="分组">
+            <input v-model="newChannel.tvg_logo" placeholder="台标 URL (可选)">
+            <button class="btn btn-primary" @click="addChannel">添加</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="search-bar">
+            <input v-model="search" placeholder="搜索频道..." style="flex:1">
+          </div>
+          <div class="search-bar" style="flex-wrap:wrap">
+            <span class="group-pill" :class="{active:!filterGroup}" @click="filterGroup=''">全部</span>
+            <span class="group-pill" v-for="g in groups" :class="{active:filterGroup===g.group_name}" @click="filterGroup=g.group_name">{{ g.group_name }} ({{ g.count }})</span>
+          </div>
+          <table v-if="filteredChannels.length">
+            <thead><tr><th style="width:44px"></th><th>频道</th><th>分组</th><th>流地址</th><th style="width:90px">状态</th><th style="width:150px">操作</th></tr></thead>
+            <tbody>
+              <tr v-for="ch in filteredChannels" :key="ch.id">
+                <td><div class="logo-cell"><img v-if="ch.tvg_logo" :src="ch.tvg_logo" onerror="this.style.display='none'"></div></td>
+                <td>{{ ch.name }}</td>
+                <td><span class="tag tag-gray">{{ ch.group_name }}</span></td>
+                <td style="max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text2)">{{ ch.url }}</td>
+                <td><span class="tag" :class="ch.enabled ? 'tag-green' : 'tag-red'">{{ ch.enabled ? '启用' : '停用' }}</span></td>
+                <td>
+                  <button class="btn btn-ghost btn-sm" @click="toggleChannel(ch)">{{ ch.enabled ? '停用' : '启用' }}</button>
+                  <button class="btn btn-danger btn-sm" @click="deleteChannel(ch)">删除</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="empty" v-else>暂无频道</div>
+        </div>
+      </div>
+
+      <!-- 直播源 -->
+      <div v-if="tab==='sources'">
+        <div class="page-header"><h2>直播源管理</h2><p>添加 M3U 源，一键同步合并去重</p></div>
+        <div class="card">
+          <h3>新增直播源</h3>
+          <div class="form-row">
+            <input v-model="newSource.name" placeholder="源名称 (可选)">
+            <input v-model="newSource.url" placeholder="M3U 地址 https://..." style="flex:2">
+            <button class="btn btn-primary" @click="addSource">添加</button>
+          </div>
+        </div>
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h3 style="margin:0">源列表</h3>
+            <button class="btn btn-green" @click="syncAll" :disabled="syncing">{{ syncing ? '同步中...' : '🔄 全量同步' }}</button>
+          </div>
+          <table v-if="sources.length">
+            <thead><tr><th>名称</th><th>地址</th><th>频道数</th><th>状态</th><th>最近同步</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr v-for="s in sources" :key="s.id">
+                <td>{{ s.name }}</td>
+                <td style="max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text2)">{{ s.url }}</td>
+                <td>{{ s.channel_count }}</td>
+                <td><span class="tag" :class="s.status==='ok' ? 'tag-green' : (s.status==='error' ? 'tag-red' : 'tag-gray')">{{ s.status || 'pending' }}</span></td>
+                <td>{{ s.last_sync ? fmtTime(s.last_sync) : '未同步' }}</td>
+                <td><button class="btn btn-danger btn-sm" @click="deleteSource(s)">删除</button></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="empty" v-else>暂无直播源</div>
+        </div>
+      </div>
+
+      <!-- EPG -->
+      <div v-if="tab==='epg'">
+        <div class="page-header"><h2>EPG 节目单</h2><p>添加 XMLTV 源，自动匹配频道显示节目预告</p></div>
+        <div class="card">
+          <h3>新增 EPG 源</h3>
+          <div class="form-row">
+            <input v-model="newEpg.name" placeholder="源名称 (可选)">
+            <input v-model="newEpg.url" placeholder="XMLTV 地址 https://...xml" style="flex:2">
+            <button class="btn btn-primary" @click="addEpg">添加</button>
+          </div>
+        </div>
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h3 style="margin:0">EPG 源列表</h3>
+            <button class="btn btn-green" @click="syncEpg" :disabled="epgSyncing">{{ epgSyncing ? '同步中...' : '🔄 同步 EPG' }}</button>
+          </div>
+          <table v-if="epgs.length">
+            <thead><tr><th>名称</th><th>地址</th><th>状态</th><th>最近同步</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr v-for="e in epgs" :key="e.id">
+                <td>{{ e.name }}</td>
+                <td style="max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text2)">{{ e.url }}</td>
+                <td><span class="tag" :class="e.status==='ok' ? 'tag-green' : (e.status==='error' ? 'tag-red' : 'tag-gray')">{{ e.status || 'pending' }}</span></td>
+                <td>{{ e.last_sync ? fmtTime(e.last_sync) : '未同步' }}</td>
+                <td><button class="btn btn-danger btn-sm" @click="deleteEpg(e)">删除</button></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="empty" v-else>暂无 EPG 源，可添加 fanmingming EPG：<code class="muted">https://cdn.jsdelivr.net/gh/fanmingming/live@main/e.xml</code></div>
+        </div>
+      </div>
+
+      <!-- M3U 下发 -->
+      <div v-if="tab==='m3u'">
+        <div class="page-header"><h2>M3U 下发</h2><p>把这些地址填入播放器即可拉取全部频道</p></div>
+        <div class="card">
+          <h3>下发地址</h3>
+          <div class="form-row" style="align-items:center">
+            <label>M3U 文件：</label>
+            <input :value="m3uUrl" readonly style="font-family:monospace">
+            <button class="btn btn-blue" @click="copy(m3uUrl)">复制</button>
+          </div>
+          <div class="form-row" style="align-items:center">
+            <label>纯文本：</label>
+            <input :value="m3uTxtUrl" readonly style="font-family:monospace">
+            <button class="btn btn-blue" @click="copy(m3uTxtUrl)">复制</button>
+          </div>
+          <div class="form-row" style="align-items:center">
+            <label>JSON：</label>
+            <input :value="jsonUrl" readonly style="font-family:monospace">
+            <button class="btn btn-blue" @click="copy(jsonUrl)">复制</button>
+          </div>
+          <button class="btn btn-ghost" @click="previewM3u">预览内容</button>
+          <pre class="code" v-if="m3uPreview" style="margin-top:16px; max-height:400px">{{ m3uPreview }}</pre>
+        </div>
+      </div>
+
+      <!-- 系统设置 -->
+      <div v-if="tab==='settings'">
+        <div class="page-header"><h2>系统设置</h2><p>站点信息与账号密码</p></div>
+        <div class="card">
+          <h3>站点设置</h3>
+          <div class="form-row">
+            <label>站点名称：</label>
+            <input v-model="settings.site_name">
+          </div>
+          <div class="form-row">
+            <label>APK 下载地址：</label>
+            <input v-model="settings.apk_url" placeholder="留空用默认 GitHub Release 直链" style="flex:2">
+          </div>
+          <button class="btn btn-primary" @click="saveSettings">保存设置</button>
+        </div>
+        <div class="card">
+          <h3>修改密码</h3>
+          <div class="form-row">
+            <input v-model="pwd.old" type="password" placeholder="原密码">
+            <input v-model="pwd.new1" type="password" placeholder="新密码 (至少6位)">
+            <input v-model="pwd.new2" type="password" placeholder="确认新密码">
+            <button class="btn btn-primary" @click="changePwd">修改密码</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center; padding:60px; color:var(--text2)" v-else>加载中...</div>
+  <div class="toast" v-if="toast" :class="{error: toastError}">{{ toast }}</div>
+</div>
+
+<script>
+const { createApp } = Vue;
+createApp({
+  data() {
+    return {
+      authed: false,
+      username: '',
+      tab: 'dashboard',
+      channels: [], sources: [], groups: [], epgs: [],
+      newChannel: { name: '', url: '', group_name: '', tvg_logo: '' },
+      newSource: { name: '', url: '' },
+      newEpg: { name: '', url: '' },
+      settings: { site_name: '喜宝IPTV', apk_url: '' },
+      pwd: { old: '', new1: '', new2: '' },
+      search: '', filterGroup: '',
+      syncing: false, epgSyncing: false,
+      toast: '', toastError: false, m3uPreview: '',
+    };
+  },
+  computed: {
+    enabledCount() { return this.channels.filter(c => c.enabled).length; },
+    filteredChannels() {
+      let l = this.channels;
+      if (this.filterGroup) l = l.filter(c => c.group_name === this.filterGroup);
+      if (this.search) l = l.filter(c => c.name.includes(this.search));
+      return l;
+    },
+    m3uUrl() { return location.origin + '/m3u'; },
+    m3uTxtUrl() { return location.origin + '/api/m3u.txt'; },
+    jsonUrl() { return location.origin + '/api/channels.json'; },
+  },
+  async mounted() {
+    // 检查登录态
+    try {
+      const me = await fetch('/api/auth/me');
+      if (me.status === 401) { window.location.href = '/login'; return; }
+      const j = await me.json();
+      if (j.code !== 0) { window.location.href = '/login'; return; }
+      this.username = j.data.username;
+      this.authed = true;
+      await this.loadAll();
+    } catch (e) {
+      window.location.href = '/login';
+    }
+  },
+  methods: {
+    async api(path, opts = {}) {
+      const res = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...opts });
+      if (res.status === 401) { window.location.href = '/login'; throw new Error('未登录'); }
+      const json = await res.json();
+      if (json.code !== 0) throw new Error(json.msg || '请求失败');
+      return json.data;
+    },
+    async loadAll() {
+      try {
+        this.channels = await this.api('/api/channels') || [];
+        this.sources = await this.api('/api/sources') || [];
+        this.groups = await this.api('/api/groups') || [];
+        this.epgs = await this.api('/api/epgs') || [];
+        const s = await this.api('/api/settings');
+        if (s) this.settings = s;
+      } catch (e) { this.showToast(e.message, true); }
+    },
+    async addChannel() {
+      if (!this.newChannel.name || !this.newChannel.url) return this.showToast('请填写频道名称和流地址', true);
+      try {
+        await this.api('/api/channels', { method: 'POST', body: JSON.stringify(this.newChannel) });
+        this.newChannel = { name: '', url: '', group_name: '', tvg_logo: '' };
+        await this.loadAll(); this.showToast('已添加');
+      } catch (e) { this.showToast(e.message, true); }
+    },
+    async addSource() {
+      if (!this.newSource.url) return this.showToast('请填写 M3U 地址', true);
+      try {
+        await this.api('/api/sources', { method: 'POST', body: JSON.stringify(this.newSource) });
+        this.newSource = { name: '', url: '' };
+        await this.loadAll(); this.showToast('源已添加');
+      } catch (e) { this.showToast(e.message, true); }
+    },
+    async addEpg() {
+      if (!this.newEpg.url) return this.showToast('请填写 XMLTV 地址', true);
+      try {
+        await this.api('/api/epgs', { method: 'POST', body: JSON.stringify(this.newEpg) });
+        this.newEpg = { name: '', url: '' };
+        await this.loadAll(); this.showToast('EPG 源已添加');
+      } catch (e) { this.showToast(e.message, true); }
+    },
+    async syncAll() {
+      this.syncing = true;
+      try {
+        const r = await this.api('/api/sync', { method: 'POST' });
+        await this.loadAll(); this.showToast('同步完成，共 ' + r.count + ' 个频道');
+      } catch (e) { this.showToast('同步失败: ' + e.message, true); }
+      finally { this.syncing = false; }
+    },
+    async syncEpg() {
+      this.epgSyncing = true;
+      try {
+        const r = await this.api('/api/epgs/sync', { method: 'POST' });
+        this.showToast('EPG 同步完成，共 ' + r.total + ' 条节目');
+      } catch (e) { this.showToast('同步失败: ' + e.message, true); }
+      finally { this.epgSyncing = false; }
+    },
+    async deleteChannel(ch) {
+      if (!confirm(`删除频道「${ch.name}」？`)) return;
+      try { await this.api('/api/channels/' + ch.id, { method: 'DELETE' }); await this.loadAll(); }
+      catch (e) { this.showToast(e.message, true); }
+    },
+    async toggleChannel(ch) {
+      try { await this.api('/api/channels/' + ch.id, { method: 'PUT', body: JSON.stringify({ enabled: ch.enabled ? 0 : 1 }) }); await this.loadAll(); }
+      catch (e) { this.showToast(e.message, true); }
+    },
+    async deleteSource(s) {
+      if (!confirm(`删除源「${s.name}」？`)) return;
+      try { await this.api('/api/sources/' + s.id, { method: 'DELETE' }); await this.loadAll(); }
+      catch (e) { this.showToast(e.message, true); }
+    },
+    async deleteEpg(e) {
+      if (!confirm(`删除 EPG 源「${e.name}」？`)) return;
+      try { await this.api('/api/epgs/' + e.id, { method: 'DELETE' }); await this.loadAll(); }
+      catch (e) { this.showToast(e.message, true); }
+    },
+    async saveSettings() {
+      try { await this.api('/api/settings', { method: 'POST', body: JSON.stringify(this.settings) }); this.showToast('已保存'); }
+      catch (e) { this.showToast(e.message, true); }
+    },
+    async changePwd() {
+      if (this.pwd.new1 !== this.pwd.new2) return this.showToast('两次密码不一致', true);
+      if (this.pwd.new1.length < 6) return this.showToast('新密码至少 6 位', true);
+      try {
+        await this.api('/api/auth/password', { method: 'POST', body: JSON.stringify({ old_password: this.pwd.old, new_password: this.pwd.new1 }) });
+        this.pwd = { old: '', new1: '', new2: '' }; this.showToast('密码已修改');
+      } catch (e) { this.showToast(e.message, true); }
+    },
+    async logout() {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.href = '/login';
+    },
+    async previewM3u() {
+      const res = await fetch('/api/m3u.txt');
+      this.m3uPreview = await res.text();
+    },
+    copy(text) { navigator.clipboard.writeText(text).then(() => this.showToast('已复制')); },
+    showToast(msg, isErr = false) { this.toast = msg; this.toastError = isErr; setTimeout(() => { this.toast = ''; }, 2500); },
+    fmtTime(ts) { return new Date(ts * 1000).toLocaleString('zh-CN'); },
+  },
+}).mount('#app');
+</script>
+</body>
+</html>

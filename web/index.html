@@ -3,380 +3,132 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>喜宝IPTV · 管理后台</title>
+<title>喜宝IPTV</title>
 <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
 <style>
-:root {
-  --bg: #0f1115;
-  --bg2: #1a1d24;
-  --card: #1f232c;
-  --border: #2a2f3a;
-  --text: #e6e8eb;
-  --text2: #9aa0ab;
-  --accent: #ff6b35;
-  --accent2: #4f8cff;
-  --green: #2ecc71;
-  --red: #e74c3c;
-}
 * { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0f1115; --bg2: #1a1d24; --card: #1f232c; --border: #2a2f3a;
+  --text: #e6e8eb; --text2: #9aa0ab; --accent: #ff6b35; --accent2: #4f8cff; --green: #2ecc71;
+}
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background: var(--bg); color: var(--text); min-height: 100vh;
+  background: radial-gradient(ellipse at top, #1a1d24 0%, #0f1115 60%);
 }
-a { color: var(--accent2); text-decoration: none; }
-.header {
-  background: var(--bg2); border-bottom: 1px solid var(--border);
-  padding: 14px 24px; display: flex; align-items: center; gap: 16px;
-  position: sticky; top: 0; z-index: 10;
+.nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 24px; border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: rgba(15,17,21,0.9); backdrop-filter: blur(8px); z-index: 10;
 }
-.header h1 { font-size: 20px; font-weight: 600; }
-.header h1 span { color: var(--accent); }
-.header .spacer { flex: 1; }
-.tabs { display: flex; gap: 4px; }
-.tab {
-  padding: 8px 18px; border-radius: 8px; cursor: pointer;
-  color: var(--text2); font-size: 14px; border: none; background: transparent;
+.nav .brand { font-size: 18px; font-weight: 700; }
+.nav .brand span { color: var(--accent); }
+.nav .links { display: flex; gap: 16px; align-items: center; }
+.nav .links a {
+  color: var(--text2); text-decoration: none; font-size: 14px;
+  padding: 7px 14px; border-radius: 8px; transition: all .15s;
 }
-.tab.active { background: var(--card); color: var(--text); font-weight: 600; }
-.container { padding: 24px; max-width: 1200px; margin: 0 auto; }
-.card {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: 12px; padding: 20px; margin-bottom: 20px;
+.nav .links a:hover { color: var(--text); background: var(--card); }
+.nav .links a.admin { background: var(--accent); color: #fff; font-weight: 600; }
+.hero { text-align: center; padding: 60px 24px 40px; }
+.hero h1 { font-size: 40px; font-weight: 700; margin-bottom: 8px; }
+.hero h1 span { color: var(--accent); }
+.hero p { color: var(--text2); font-size: 16px; margin-bottom: 32px; }
+.download-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 20px;
+  max-width: 520px; margin: 0 auto; padding: 40px 32px;
 }
-.card h2 { font-size: 16px; margin-bottom: 16px; }
-.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 24px; }
-.stat {
-  background: var(--card); border: 1px solid var(--border); border-radius: 12px;
-  padding: 18px; text-align: center;
-}
-.stat .num { font-size: 28px; font-weight: 700; color: var(--accent); }
-.stat .label { font-size: 13px; color: var(--text2); margin-top: 4px; }
-.btn {
-  display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px;
-  border-radius: 8px; border: none; cursor: pointer; font-size: 14px; font-weight: 500;
+.dl-btn {
+  display: flex; align-items: center; gap: 10px; justify-content: center;
+  padding: 18px; background: var(--accent); color: #fff; border-radius: 14px;
+  font-size: 18px; font-weight: 700; text-decoration: none; margin-bottom: 24px;
   transition: opacity .15s;
 }
-.btn:hover { opacity: .85; }
-.btn-primary { background: var(--accent); color: #fff; }
-.btn-blue { background: var(--accent2); color: #fff; }
-.btn-green { background: var(--green); color: #fff; }
-.btn-danger { background: var(--red); color: #fff; }
-.btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text2); }
-.btn-sm { padding: 5px 10px; font-size: 12px; }
-input, select {
-  background: var(--bg2); border: 1px solid var(--border); color: var(--text);
-  padding: 9px 12px; border-radius: 8px; font-size: 14px; width: 100%;
+.dl-btn:hover { opacity: .88; }
+.qr { display: flex; align-items: center; gap: 24px; justify-content: center; margin-bottom: 20px; }
+.qr .qrcode { width: 140px; height: 140px; background: #fff; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+.qr .qrcode img { width: 130px; height: 130px; }
+.steps { text-align: left; font-size: 14px; color: var(--text2); line-height: 2; }
+.steps b { color: var(--text); }
+.steps .num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff;
+  font-size: 12px; margin-right: 8px;
 }
-input:focus, select:focus { outline: none; border-color: var(--accent2); }
-.form-row { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
-.form-row > * { flex: 1; min-width: 140px; }
-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
-th { color: var(--text2); font-weight: 500; font-size: 13px; }
-tr:hover td { background: var(--bg2); }
-.logo-cell { display: flex; align-items: center; gap: 10px; }
-.logo-cell img { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; background: #333; }
-.tag {
-  display: inline-block; padding: 2px 8px; border-radius: 4px;
-  font-size: 12px; margin-right: 4px;
+.features {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px; max-width: 900px; margin: 48px auto 40px; padding: 0 24px;
 }
-.tag-green { background: rgba(46,204,113,.15); color: var(--green); }
-.tag-red { background: rgba(231,76,60,.15); color: var(--red); }
-.tag-gray { background: rgba(154,160,171,.15); color: var(--text2); }
-.loading { text-align: center; padding: 40px; color: var(--text2); }
-.toast {
-  position: fixed; bottom: 24px; right: 24px; padding: 14px 20px;
-  border-radius: 8px; background: var(--green); color: #fff; font-size: 14px;
-  z-index: 100; box-shadow: 0 4px 16px rgba(0,0,0,.3); animation: slideIn .3s;
+.feat {
+  background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 24px;
 }
-.toast.error { background: var(--red); }
-@keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-.group-pill {
-  display: inline-block; padding: 5px 12px; border-radius: 16px; margin: 0 6px 6px 0;
-  background: var(--card); border: 1px solid var(--border); cursor: pointer; font-size: 13px;
-}
-.group-pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-.empty { text-align: center; padding: 40px; color: var(--text2); }
-.search-bar { display: flex; gap: 12px; margin-bottom: 16px; }
-.search-bar input { flex: 1; }
+.feat .ico { font-size: 28px; margin-bottom: 10px; }
+.feat h3 { font-size: 16px; margin-bottom: 6px; }
+.feat p { font-size: 13px; color: var(--text2); line-height: 1.6; }
+.footer { text-align: center; padding: 24px; color: var(--text2); font-size: 12px; border-top: 1px solid var(--border); }
+.footer a { color: var(--accent2); text-decoration: none; }
 </style>
 </head>
 <body>
-
 <div id="app">
-  <div class="header">
-    <h1>📺 喜宝<span>IPTV</span> · 管理后台</h1>
-    <div class="spacer"></div>
-    <div class="tabs">
-      <button class="tab" :class="{active: tab==='channels'}" @click="tab='channels'">频道管理</button>
-      <button class="tab" :class="{active: tab==='sources'}" @click="tab='sources'">直播源</button>
-      <button class="tab" :class="{active: tab==='m3u'}" @click="tab='m3u'">M3U下发</button>
+  <div class="nav">
+    <div class="brand">📺 喜宝<span>IPTV</span></div>
+    <div class="links">
+      <a href="#download">下载 APK</a>
+      <a href="#features">功能</a>
+      <a href="/admin" class="admin">管理后台</a>
     </div>
   </div>
 
-  <div class="container">
-    <!-- 统计 -->
-    <div class="stats">
-      <div class="stat"><div class="num">{{ stats.channels }}</div><div class="label">频道总数</div></div>
-      <div class="stat"><div class="num">{{ stats.groups }}</div><div class="label">分组数</div></div>
-      <div class="stat"><div class="num">{{ stats.sources }}</div><div class="label">直播源</div></div>
-      <div class="stat"><div class="num">{{ stats.enabled }}</div><div class="label">启用频道</div></div>
-    </div>
-
-    <!-- 频道管理 -->
-    <div v-if="tab==='channels'">
-      <div class="card">
-        <h2>频道管理</h2>
-        <div class="form-row">
-          <input v-model="newChannel.name" placeholder="频道名称 (如 CCTV-1)">
-          <input v-model="newChannel.url" placeholder="流地址 (http://...)" style="flex:2">
-          <select v-model="newChannel.group_name">
-            <option value="">未分组</option>
-            <option v-for="g in groups" :value="g.group_name">{{ g.group_name }}</option>
-          </select>
-          <select v-model="newChannel.group_name" placeholder="分组">
-            <option value="">选择分组</option>
-            <option v-for="g in groups" :value="g.group_name">{{ g.group_name }}</option>
-          </select>
-          <button class="btn btn-primary" @click="addChannel">添加频道</button>
-        </div>
-        <div class="search-bar">
-          <input v-model="search" placeholder="搜索频道...">
-          <div style="flex:2; display:flex; flex-wrap:wrap;">
-            <span class="group-pill" :class="{active:!filterGroup}" @click="filterGroup=''">全部</span>
-            <span class="group-pill" v-for="g in groups" :class="{active:filterGroup===g.group_name}" @click="filterGroup=g.group_name">{{ g.group_name }} ({{ g.count }})</span>
-          </div>
-        </div>
-        <table v-if="filteredChannels.length">
-          <thead>
-            <tr>
-              <th style="width:44px"></th>
-              <th>频道</th>
-              <th>分组</th>
-              <th>流地址</th>
-              <th style="width:100px">状态</th>
-              <th style="width:160px">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="ch in filteredChannels" :key="ch.id">
-              <td><div class="logo-cell"><img v-if="ch.tvg_logo" :src="ch.tvg_logo" onerror="this.style.display='none'"></div></td>
-              <td>{{ ch.name }}</td>
-              <td><span class="tag tag-gray">{{ ch.group_name }}</span></td>
-              <td style="max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text2)">{{ ch.url }}</td>
-              <td><span class="tag" :class="ch.enabled ? 'tag-green' : 'tag-red'">{{ ch.enabled ? '启用' : '停用' }}</span></td>
-              <td>
-                <button class="btn btn-ghost btn-sm" @click="toggleChannel(ch)">{{ ch.enabled ? '停用' : '启用' }}</button>
-                <button class="btn btn-danger btn-sm" @click="deleteChannel(ch)">删除</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <div class="empty" v-else>暂无频道，请先在「直播源」添加源并同步</div>
-      </div>
-    </div>
-
-    <!-- 直播源 -->
-    <div v-if="tab==='sources'">
-      <div class="card">
-        <h2>直播源管理</h2>
-        <div class="form-row">
-          <input v-model="newSource.name" placeholder="源名称 (如 fanmingming)">
-          <input v-model="newSource.url" placeholder="M3U 地址 (https://...)" style="flex:2">
-          <button class="btn btn-primary" @click="addSource">添加源</button>
-        </div>
-        <table v-if="sources.length">
-          <thead>
-            <tr>
-              <th>名称</th>
-              <th>地址</th>
-              <th>频道数</th>
-              <th>状态</th>
-              <th>最近同步</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="s in sources" :key="s.id">
-              <td>{{ s.name }}</td>
-              <td style="max-width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text2)">{{ s.url }}</td>
-              <td>{{ s.channel_count }}</td>
-              <td><span class="tag" :class="s.status==='ok' ? 'tag-green' : (s.status==='error' ? 'tag-red' : 'tag-gray')">{{ s.status || 'pending' }}</span></td>
-              <td>{{ s.last_sync ? fmtTime(s.last_sync) : '未同步' }}</td>
-              <td><button class="btn btn-danger btn-sm" @click="deleteSource(s)">删除</button></td>
-            </tr>
-          </tbody>
-        </table>
-        <div class="empty" v-else>暂无直播源，请添加一个 M3U 地址</div>
-        <div style="margin-top:16px; display:flex; gap:12px;">
-          <button class="btn btn-green" @click="syncAll" :disabled="syncing">{{ syncing ? '同步中...' : '🔄 全量同步' }}</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- M3U 下发 -->
-    <div v-if="tab==='m3u'">
-      <div class="card">
-        <h2>M3U 下发地址</h2>
-        <p style="color:var(--text2); margin-bottom:16px; line-height:1.8;">
-          把下面的地址填入你的播放器/APK，即可拉取全部频道。<br>
-          也支持直接复制文本内容。
-        </p>
-        <div class="form-row" style="align-items:center;">
-          <input :value="m3uUrl" readonly style="font-family:monospace; font-size:13px;">
-          <button class="btn btn-blue" @click="copy(m3uUrl)">复制链接</button>
-        </div>
-        <div class="form-row" style="align-items:center; margin-top:8px;">
-          <input :value="m3uTxtUrl" readonly style="font-family:monospace; font-size:13px;">
-          <button class="btn btn-blue" @click="copy(m3uTxtUrl)">复制纯文本链接</button>
-        </div>
-        <div style="margin-top:16px;">
-          <button class="btn btn-ghost" @click="previewM3U">预览 M3U 内容</button>
-        </div>
-        <pre v-if="m3uPreview" style="margin-top:16px; background:var(--bg2); padding:16px; border-radius:8px; max-height:400px; overflow:auto; font-size:12px; white-space:pre-wrap;">{{ m3uPreview }}</pre>
+  <div class="hero" id="download">
+    <h1>📺 喜宝<span>IPTV</span></h1>
+    <p>自建 IPTV 播放器 · 手机 / 电视 / 盒子通用</p>
+    <div class="download-card">
+      <a class="dl-btn" :href="apkUrl" download>⬇️ 下载 APK</a>
+      <div class="steps">
+        <div><span class="num">1</span>下载并安装 <b>{{ apkName }}</b></div>
+        <div><span class="num">2</span>打开 APP，输入后端地址</div>
+        <div><span class="num">3</span>选择频道，开始观看</div>
       </div>
     </div>
   </div>
 
-  <div class="toast" v-if="toast" :class="{error: toastError}">{{ toast }}</div>
+  <div class="features" id="features">
+    <div class="feat"><div class="ico">📡</div><h3>多源导入</h3><p>粘贴任意 M3U 直播源，一键拉取合并去重</p></div>
+    <div class="feat"><div class="ico">🗂️</div><h3>频道管理</h3><p>分组、台标、启停、排序，全在网页后台</p></div>
+    <div class="feat"><div class="ico">📺</div><h3>EPG 节目单</h3><p>支持 XMLTV 源，自动匹配频道显示节目预告</p></div>
+    <div class="feat"><div class="ico">🔒</div><h3>完全自建</h3><p>数据在你自己服务器，不依赖第三方</p></div>
+  </div>
+
+  <div class="footer">
+    © <span id="year"></span> {{ siteName }} · <a href="/admin">管理后台</a>
+  </div>
 </div>
 
 <script>
 const { createApp } = Vue;
-
 createApp({
   data() {
-    return {
-      tab: 'channels',
-      channels: [],
-      sources: [],
-      groups: [],
-      newChannel: { name: '', url: '', group_name: '' },
-      newSource: { name: '', url: '' },
-      search: '',
-      filterGroup: '',
-      syncing: false,
-      toast: '',
-      toastError: false,
-      m3uPreview: '',
-    };
-  },
-  computed: {
-    stats() {
-      return {
-        channels: this.channels.length,
-        groups: this.groups.length,
-        sources: this.sources.length,
-        enabled: this.channels.filter(c => c.enabled).length,
-      };
-    },
-    filteredChannels() {
-      let list = this.channels;
-      if (this.filterGroup) list = list.filter(c => c.group_name === this.filterGroup);
-      if (this.search) list = list.filter(c => c.name.includes(this.search));
-      return list;
-    },
-    m3uUrl() { return location.origin + '/m3u'; },
-    m3uTxtUrl() { return location.origin + '/api/m3u.txt'; },
+    return { siteName: '喜宝IPTV', apkUrl: '', apkName: '喜宝IPTV.apk' };
   },
   async mounted() {
-    await this.loadAll();
-  },
-  methods: {
-    async api(path, opts = {}) {
-      const res = await fetch(path, {
-        headers: { 'Content-Type': 'application/json' },
-        ...opts,
-      });
+    document.getElementById('year').textContent = new Date().getFullYear();
+    try {
+      const res = await fetch('/api/settings');
       const json = await res.json();
-      if (json.code !== 0 && json.code !== undefined) throw new Error(json.msg || '请求失败');
-      return json.data;
-    },
-    async loadAll() {
-      try {
-        this.channels = await this.api('/api/channels') || [];
-        this.sources = await this.api('/api/sources') || [];
-        this.groups = await this.api('/api/groups') || [];
-      } catch (e) {
-        this.showToast('加载失败: ' + e.message, true);
+      if (json.code === 0 && json.data) {
+        this.siteName = json.data.site_name || '喜宝IPTV';
+        if (json.data.apk_url) {
+          this.apkUrl = json.data.apk_url;
+          this.apkName = json.data.apk_url.split('/').pop();
+        }
       }
-    },
-    async addChannel() {
-      if (!this.newChannel.name || !this.newChannel.url) {
-        return this.showToast('请填写频道名称和流地址', true);
-      }
-      try {
-        await this.api('/api/channels', {
-          method: 'POST',
-          body: JSON.stringify(this.newChannel),
-        });
-        this.newChannel = { name: '', url: '', group_name: '' };
-        await this.loadAll();
-        this.showToast('频道已添加');
-      } catch (e) { this.showToast(e.message, true); }
-    },
-    async addSource() {
-      if (!this.newSource.url) return this.showToast('请填写 M3U 地址', true);
-      try {
-        await this.api('/api/sources', {
-          method: 'POST',
-          body: JSON.stringify(this.newSource),
-        });
-        this.newSource = { name: '', url: '' };
-        await this.loadAll();
-        this.showToast('源已添加');
-      } catch (e) { this.showToast(e.message, true); }
-    },
-    async syncAll() {
-      this.syncing = true;
-      try {
-        const r = await this.api('/api/sync', { method: 'POST' });
-        await this.loadAll();
-        this.showToast('同步完成，共 ' + r.count + ' 个频道');
-      } catch (e) { this.showToast('同步失败: ' + e.message, true); }
-      finally { this.syncing = false; }
-    },
-    async deleteChannel(ch) {
-      if (!confirm(`确定删除频道「${ch.name}」？`)) return;
-      try {
-        await this.api('/api/channels/' + ch.id, { method: 'DELETE' });
-        await this.loadAll();
-        this.showToast('已删除');
-      } catch (e) { this.showToast(e.message, true); }
-    },
-    async toggleChannel(ch) {
-      try {
-        await this.api('/api/channels/' + ch.id, {
-          method: 'PUT',
-          body: JSON.stringify({ enabled: ch.enabled ? 0 : 1 }),
-        });
-        await this.loadAll();
-      } catch (e) { this.showToast(e.message, true); }
-    },
-    async deleteSource(s) {
-      if (!confirm(`确定删除源「${s.name}」？`)) return;
-      try {
-        await this.api('/api/sources/' + s.id, { method: 'DELETE' });
-        await this.loadAll();
-        this.showToast('已删除');
-      } catch (e) { this.showToast(e.message, true); }
-    },
-    async previewM3U() {
-      const res = await fetch('/api/m3u.txt');
-      this.m3uPreview = await res.text();
-    },
-    copy(text) {
-      navigator.clipboard.writeText(text).then(() => this.showToast('已复制'));
-    },
-    showToast(msg, isErr = false) {
-      this.toast = msg;
-      this.toastError = isErr;
-      setTimeout(() => { this.toast = ''; }, 2500);
-    },
-    fmtTime(ts) {
-      const d = new Date(ts * 1000);
-      return d.toLocaleString('zh-CN');
-    },
+    } catch (e) {}
+    // 默认 APK 地址（GitHub Release 直链）
+    if (!this.apkUrl) {
+      this.apkUrl = 'https://github.com/billconan2017/xibao-iptv/releases/latest/download/xibao-iptv-v1.0.1.apk';
+      this.apkName = '喜宝IPTV.apk';
+    }
   },
 }).mount('#app');
 </script>

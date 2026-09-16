@@ -3,6 +3,7 @@ import express from 'express';
 import { getDb } from '../store.js';
 import { parseM3U, mergeChannels, generateM3U } from '../m3u.js';
 import { syncAllSources } from '../source.js';
+import { requireAuth } from '../auth.js';
 
 const router = express.Router();
 
@@ -44,7 +45,7 @@ router.get('/groups', (req, res) => {
 });
 
 // 新增频道
-router.post('/channels', (req, res) => {
+router.post('/channels', requireAuth, (req, res) => {
   const db = getDb();
   const { name, url, group_name, tvg_id, tvg_logo, tvg_name, sort_order } = req.body;
   if (!name || !url) return res.status(400).json({ code: 1, msg: 'name 和 url 必填' });
@@ -64,7 +65,7 @@ router.post('/channels', (req, res) => {
 });
 
 // 批量更新频道
-router.put('/channels/:id', (req, res) => {
+router.put('/channels/:id', requireAuth, (req, res) => {
   const db = getDb();
   const { id } = req.params;
   const { name, url, group_name, tvg_id, tvg_logo, tvg_name, sort_order, enabled } = req.body;
@@ -92,7 +93,7 @@ router.put('/channels/:id', (req, res) => {
 });
 
 // 删除频道
-router.delete('/channels/:id', (req, res) => {
+router.delete('/channels/:id', requireAuth, (req, res) => {
   const db = getDb();
   db.prepare('DELETE FROM channels WHERE id=?').run(req.params.id);
   res.json({ code: 0, msg: 'ok' });
@@ -108,7 +109,7 @@ router.get('/sources', (req, res) => {
 });
 
 // 添加源
-router.post('/sources', (req, res) => {
+router.post('/sources', requireAuth, (req, res) => {
   const db = getDb();
   const { name, url, type } = req.body;
   if (!url) return res.status(400).json({ code: 1, msg: 'url 必填' });
@@ -127,7 +128,7 @@ router.post('/sources', (req, res) => {
 });
 
 // 删除源
-router.delete('/sources/:id', (req, res) => {
+router.delete('/sources/:id', requireAuth, (req, res) => {
   const db = getDb();
   db.prepare('DELETE FROM sources WHERE id=?').run(req.params.id);
   res.json({ code: 0, msg: 'ok' });
@@ -136,7 +137,7 @@ router.delete('/sources/:id', (req, res) => {
 // ============ 同步 ============
 
 // 触发全量同步：拉所有源 → 合并去重 → 入库
-router.post('/sync', async (req, res) => {
+router.post('/sync', requireAuth, async (req, res) => {
   const db = getDb();
   const sources = db.prepare('SELECT * FROM sources WHERE enabled=1').all();
 

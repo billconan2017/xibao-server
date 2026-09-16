@@ -2,8 +2,12 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { initDb } from './store.js';
+import { initDb, getSetting } from './store.js';
 import apiRouter from './routes/api.js';
+import authRouter from './routes/auth.js';
+import epgRouter from './routes/epg.js';
+import settingsRouter from './routes/settings.js';
+import { requireAuth } from './auth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 8080;
@@ -17,21 +21,43 @@ app.use(express.urlencoded({ extended: true }));
 // 初始化数据库
 initDb();
 
-// API 路由
-app.use('/api', apiRouter);
-
-// 兼容顶层接口（旧 APK 走 /mytv/...）
-app.use('/', apiRouter);
-
-// 静态管理后台
+// 静态资源（管理后台前端页面）
 const webDir = path.join(__dirname, '..', 'web');
 app.use(express.static(webDir));
 
+// ============ API 路由 ============
+app.use('/api', apiRouter);
+app.use('/api', authRouter);
+app.use('/api', epgRouter);
+app.use('/api', settingsRouter);
+
+// 兼容顶层下发接口（无需登录，供 APK 拉取）
+app.use('/', apiRouter);
+
+// ============ 页面路由 ============
+
+// 首页：APK 下载 + 入口
+app.get('/', (req, res) => {
+  res.sendFile(path.join(webDir, 'index.html'));
+});
+
+// 登录页
+app.get('/login', (req, res) => {
+  res.sendFile(path.join(webDir, 'login.html'));
+});
+
+// 后台（需登录）
+app.get('/admin', requireAuth, (req, res) => {
+  res.sendFile(path.join(webDir, 'admin.html'));
+});
+
 // 健康检查
-app.get('/health', (req, res) => res.json({ status: 'ok', name: 'xibao-server', version: '1.0.0' }));
+app.get('/health', (req, res) => res.json({ status: 'ok', name: 'xibao-server', version: '1.1.0' }));
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ 喜宝IPTV 后端已启动: http://0.0.0.0:${PORT}`);
-  console.log(`   管理后台: http://<你的IP>:${PORT}`);
-  console.log(`   M3U 下发: http://<你的IP>:${PORT}/m3u`);
+  console.log(`   首页(APK下载): http://<ip>:${PORT}/`);
+  console.log(`   登录页:        http://<ip>:${PORT}/login`);
+  console.log(`   管理后台:      http://<ip>:${PORT}/admin`);
+  console.log(`   M3U 下发:      http://<ip>:${PORT}/m3u`);
 });
