@@ -2,7 +2,8 @@
 import express from 'express';
 import { getDb, getSetting, setSetting } from '../store.js';
 import { requireAuth } from '../auth.js';
-
+import { execSync } from 'child_process';
+import fs from 'fs';
 const router = express.Router();
 
 // ============ 客户端编译配置 ============
@@ -23,7 +24,7 @@ router.get('/client/config', requireAuth, (req, res) => {
   });
 });
 
-// 保存客户端编译配置
+// 客户端编译配置
 router.post('/client/config', requireAuth, (req, res) => {
   const keys = ['server_url', 'packagename', 'appname', 'version', 'needauthor', 'decoder', 'bufftimeout'];
   const map = {
@@ -39,6 +40,46 @@ router.post('/client/config', requireAuth, (req, res) => {
     if (req.body && req.body[k] !== undefined) setSetting(map[k], req.body[k]);
   }
   res.json({ code: 0, msg: '已保存' });
+});
+
+// 构建 APK：用当前 server_url 现场编译
+router.post('/client/build', requireAuth, (req, res) => {
+  const serverUrl = req.body?.server_url || getSetting('client_server_url', '');
+  if (!serverUrl) return res.status(400).json({ code: 1, msg: '请先在编译配置中填写服务器地址' });
+
+  const APK_DIR = '/home/bill/.openclaw/workspace/iptv/iptv-app';
+  const OUT_APK = '/tmp/xibao-iptv.apk';
+  
+  // 用子进程同步执行构建
+  try {
+    // 1. 用 server_url 编译前端
+    execSync(
+      `VITE_SERVER_URL="${serverUrl}" npx vite build`,
+      { cwd: APK_DIR, stdio: 'pipe', timeout: 60000, env: { ...process.env, PATH: process.env.PATH } }
+    );
+    // 2. sync 到电容
+    execSync(
+      `npx cap sync android`,
+      { cwd: APK_DIR, stdio: 'pipe', timeout: 30000, env: { ...process.env, PATH: process.env.PATH } }
+    );
+    // 3. gradle 打包（静默，只取关键输出）
+    execSync(
+      `cd android && ANDROID_HOME=/opt/android-sdk ./gradlew assembleDebug --quiet`,
+      { cwd: APK_DIR, stdio: 'pipe', timeout: 300000, env: { ...process.env, ANDROID_HOME: '/opt/android-sdk', PATH: process.env.PATH } }
+    );
+    
+    // 4. 复制到输出路径
+    execSync(`cp ${APK_DIR}/android/app/build/outputs/apk/debug/app-debug.apk ${OUT_APK}`);
+    
+    // 5. 返回文件下载
+    const stat = fs.statSync(OUT_APK);
+    res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+    res.setHeader('Content-Disposition', 'attachment; filename="xibao-iptv.apk"');
+    res.setHeader('Content-Length', stat.size);
+    fs.createReadStream(OUT_APK).pipe(res);
+  } catch (e) {
+    res.status(500).json({ code: 1, msg: `构建失败: ${e.stderr?.toString().slice(0, 200) || e.message}` });
+  }
 });
 
 // 保存应用提示文案

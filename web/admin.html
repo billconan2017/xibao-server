@@ -463,6 +463,8 @@ pre.code { background: var(--bg2); padding: 16px; border-radius: 8px; font-size:
           <div class="form-row"><input v-model="tips.user_forbidden" placeholder="禁用提示"><input v-model="tips.user_noreg" placeholder="未授权提示"></div>
         </div>
         <button class="btn btn-primary" @click="saveClientCfg">保存客户端配置</button>
+        <button class="btn" @click="buildApk" :disabled="apkBuilding">{{ apkBuilding ? '编译中...' : '生成 APK' }}</button>
+        <span v-if="apkDone" class="status-success"> ✅ APK 已生成</span>
       </div>
 
       <!-- 系统公告 -->
@@ -579,6 +581,8 @@ createApp({
       clientCfg: { server_url: '', packagename: 'com.xibao.iptv', appname: '喜宝IPTV', version: '1.0.1', needauthor: '0', decoder: '3', bufftimeout: '10' },
       tips: { loading: '', user_expired: '', user_forbidden: '', user_noreg: '' },
       ad: { adtext: '', showtime: 5, showinterval: 30 },
+      apkBuilding: false,
+      apkDone: false,
       updateInfo: { version: '', latest: '', has_update: false },
       changeLog: [],
       cron: { channelAuto: false, channelInterval: 6, epgAuto: false },
@@ -788,6 +792,30 @@ createApp({
         await this.api('/api/client/tips', { method: 'POST', body: JSON.stringify(this.tips) });
         this.showToast('已保存');
       } catch (e) { this.showToast(e.message, true); }
+    },
+    async buildApk() {
+      this.apkBuilding = true;
+      this.apkDone = false;
+      const url = this.clientCfg.server_url;
+      if (!url) { this.showToast('请先填写 APK 连接地址', true); this.apkBuilding = false; return; }
+      try {
+        const resp = await fetch('/api/client/build', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ server_url: url })
+        });
+        if (!resp.ok) { const err = await resp.json(); throw new Error(err.msg || '编译失败'); }
+        // 下载 APK
+        const blob = await resp.blob();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'xibao-iptv.apk';
+        a.click();
+        URL.revokeObjectURL(a.href);
+        this.apkDone = true;
+        this.showToast('APK 生成完成，已开始下载');
+      } catch (e) { this.showToast(e.message, true); }
+      this.apkBuilding = false;
     },
     async saveNotice() {
       try { await this.api('/api/notice', { method: 'POST', body: JSON.stringify(this.ad) }); this.showToast('公告已保存'); }
