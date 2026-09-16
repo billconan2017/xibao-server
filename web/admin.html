@@ -5,142 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>管理后台 · 喜宝IPTV</title>
 <script src="/vendor/vue.global.prod.js"></script>
-<style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --bg: #0f1115; --bg2: #1a1d24; --card: #1f232c; --border: #2a2f3a;
-  --text: #e6e8eb; --text2: #9aa0ab; --accent: #ff6b35; --accent2: #4f8cff;
-  --green: #2ecc71; --red: #e74c3c;
-}
-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
-a { color: var(--accent2); text-decoration: none; }
-.layout { display: flex; min-height: 100vh; }
-
-/* 侧边栏 */
-.sidebar {
-  width: 220px; background: var(--bg2); border-right: 1px solid var(--border);
-  display: flex; flex-direction: column; flex-shrink: 0; position: sticky; top: 0; height: 100vh;
-}
-.sidebar .brand { padding: 18px 20px; font-size: 18px; font-weight: 700; border-bottom: 1px solid var(--border); }
-.sidebar .brand span { color: var(--accent); }
-.side-nav { flex: 1; overflow-y: auto; padding: 12px 0; }
-.nav-item {
-  display: flex; align-items: center; gap: 10px; padding: 11px 20px; cursor: pointer;
-  color: var(--text2); font-size: 14px; transition: all .15s; border-left: 3px solid transparent;
-}
-.nav-item:hover { color: var(--text); background: var(--card); }
-.nav-item.active { color: var(--text); background: var(--card); border-left-color: var(--accent); font-weight: 600; }
-.nav-item .ico { width: 20px; text-align: center; }
-.sidebar .foot { padding: 14px 20px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text2); }
-.sidebar .foot a { color: var(--accent2); cursor: pointer; }
-
-/* 内容区 */
-.main { flex: 1; padding: 24px; min-width: 0; }
-.page-header { margin-bottom: 24px; }
-.page-header h2 { font-size: 22px; margin-bottom: 4px; }
-.page-header p { color: var(--text2); font-size: 13px; }
-
-/* 统计卡片 */
-.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 24px; }
-.stat { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; text-align: center; }
-.stat .num { font-size: 26px; font-weight: 700; color: var(--accent); }
-.stat .label { font-size: 13px; color: var(--text2); margin-top: 4px; }
-
-.card {
-  background: var(--card); border: 1px solid var(--border); border-radius: 12px;
-  padding: 20px; margin-bottom: 20px;
-}
-.card h3 { font-size: 16px; margin-bottom: 16px; }
-
-.btn {
-  display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px;
-  border-radius: 8px; border: none; cursor: pointer; font-size: 14px; font-weight: 500;
-  transition: opacity .15s; white-space: nowrap;
-}
-.btn:hover { opacity: .85; }
-.btn:disabled { opacity: .5; cursor: not-allowed; }
-.btn-primary { background: var(--accent); color: #fff; }
-.btn-blue { background: var(--accent2); color: #fff; }
-.btn-green { background: var(--green); color: #fff; }
-.btn-danger { background: var(--red); color: #fff; }
-.btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text2); }
-.btn-sm { padding: 5px 10px; font-size: 12px; }
-
-input, select {
-  background: var(--bg2); border: 1px solid var(--border); color: var(--text);
-  padding: 9px 12px; border-radius: 8px; font-size: 14px; width: 100%;
-}
-input:focus, select:focus { outline: none; border-color: var(--accent2); }
-input[readonly] { background: var(--bg); color: var(--text2); }
-.form-row { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
-.form-row > * { flex: 1; min-width: 140px; }
-.form-row label { font-size: 13px; color: var(--text2); align-self: center; flex: 0 0 auto; }
-
-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
-th { color: var(--text2); font-weight: 500; font-size: 13px; }
-tr:hover td { background: var(--bg2); }
-.logo-cell { display: flex; align-items: center; gap: 10px; }
-.logo-cell img { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; background: #333; }
-.tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; margin-right: 4px; }
-.tag-green { background: rgba(46,204,113,.15); color: var(--green); }
-.tag-red { background: rgba(231,76,60,.15); color: var(--red); }
-.tag-gray { background: rgba(154,160,171,.15); color: var(--text2); }
-.empty { text-align: center; padding: 40px; color: var(--text2); }
-.search-bar { display: flex; gap: 12px; margin-bottom: 16px; }
-.group-pill {
-  display: inline-block; padding: 5px 12px; border-radius: 16px; margin: 0 6px 6px 0;
-  background: var(--card); border: 1px solid var(--border); cursor: pointer; font-size: 13px;
-}
-.group-pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-
-.toast {
-  position: fixed; bottom: 24px; right: 24px; padding: 14px 20px; border-radius: 8px;
-  background: var(--green); color: #fff; font-size: 14px; z-index: 100;
-  box-shadow: 0 4px 16px rgba(0,0,0,.3); animation: slideIn .3s;
-}
-.toast.error { background: var(--red); }
-@keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-pre.code { background: var(--bg2); padding: 16px; border-radius: 8px; font-size: 12px; overflow: auto; white-space: pre-wrap; }
-.muted { color: var(--text2); font-size: 13px; }
-@media (max-width: 760px) {
-  .layout { display: block; }
-  .sidebar { width: 100%; height: auto; position: sticky; z-index: 20; border-right: 0; border-bottom: 1px solid var(--border); }
-  .sidebar .brand { padding: 10px 14px; }
-  .side-nav { display: flex; padding: 0; overflow-x: auto; }
-  .nav-item { flex: 0 0 auto; padding: 10px 12px; border-left: 0; border-bottom: 3px solid transparent; }
-  .nav-item.active { border-left-color: transparent; border-bottom-color: var(--accent); }
-  .sidebar .foot { display: flex; justify-content: space-between; padding: 8px 14px; }
-  .sidebar .foot > div { margin-bottom: 0 !important; }
-  .main { padding: 14px 10px; }
-  .page-header { margin-bottom: 14px; }
-  .card { padding: 14px; overflow-x: auto; }
-  table { min-width: 760px; }
-  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  .toast { left: 12px; right: 12px; bottom: 12px; }
-}
-</style>
+<link rel="stylesheet" href="/studio.css">
 </head>
 <body>
-<div id="app">
+<div id="app" v-cloak>
   <div class="layout" v-if="authed">
     <!-- 侧边栏 -->
-    <div class="sidebar">
-      <div class="brand">📺 喜宝<span>IPTV</span></div>
-      <div class="side-nav">
-        <div class="nav-item" :class="{active: tab==='dashboard'}" @click="tab='dashboard'"><span class="ico">📊</span>首页</div>
-        <div class="nav-item" :class="{active: tab==='channels'}" @click="tab='channels'"><span class="ico">📡</span>频道管理</div>
-        <div class="nav-item" :class="{active: tab==='sources'}" @click="tab='sources'"><span class="ico">🔗</span>直播源</div>
-        <div class="nav-item" :class="{active: tab==='epg'}" @click="tab='epg'"><span class="ico">📅</span>EPG 节目单</div>
-        <div class="nav-item" :class="{active: tab==='movies'}" @click="tab='movies'"><span class="ico">🎬</span>点播管理</div>
-        <div class="nav-item" :class="{active: tab==='meals'}" @click="tab='meals'"><span class="ico">💳</span>套餐管理</div>
-        <div class="nav-item" :class="{active: tab==='devices'}" @click="tab='devices'"><span class="ico">📱</span>设备授权</div>
-        <div class="nav-item" :class="{active: tab==='client'}" @click="tab='client'"><span class="ico">📦</span>客户端设置</div>
-        <div class="nav-item" :class="{active: tab==='notice'}" @click="tab='notice'"><span class="ico">📢</span>系统公告</div>
-        <div class="nav-item" :class="{active: tab==='m3u'}" @click="tab='m3u'"><span class="ico">📤</span>M3U 下发</div>
-        <div class="nav-item" :class="{active: tab==='update'}" @click="tab='update'"><span class="ico">🔄</span>系统更新</div>
-        <div class="nav-item" :class="{active: tab==='settings'}" @click="tab='settings'"><span class="ico">⚙️</span>系统设置</div>
-      </div>
+    <div class="menu-scrim" v-if="menuOpen" @click="menuOpen=false"></div><div class="sidebar" :class="{open:menuOpen}">
+      <div class="brand"><span class="brand-mark">▸</span><div>喜宝 TV<small>FAMILY TV</small></div></div>
+      <nav class="side-nav" aria-label="管理导航">
+        <template v-for="section in navigation" :key="section.label">
+          <div class="nav-label">{{ section.label }}</div>
+          <button v-for="item in section.items" :key="item.id" class="nav-item" :class="{active:tab===item.id}" @click="navigate(item.id)"><span class="ico">{{ item.icon }}</span>{{ item.title }}</button>
+        </template>
+      </nav>
       <div class="foot">
         <div style="margin-bottom:6px">👤 {{ username }}</div>
         <a @click="logout">退出登录</a> · <a href="/">下载 APK</a>
@@ -148,25 +26,25 @@ pre.code { background: var(--bg2); padding: 16px; border-radius: 8px; font-size:
     </div>
 
     <!-- 内容 -->
-    <div class="main">
-      <!-- Dashboard -->
-      <div v-if="tab==='dashboard'">
-        <div class="page-header"><h2>控制台</h2><p>系统概览</p></div>
+    <main class="main">
+      <header class="studio-top"><button class="mobile-menu" @click="menuOpen=!menuOpen" aria-label="打开导航">☰</button><div class="crumb">工作空间 / <strong>{{ pageTitle }}</strong></div><div class="top-actions"><span class="version-chip">{{ updateInfo.version || '管理平台' }}</span><a class="btn btn-ghost" href="/" target="_blank">客户端入口 ↗</a><button class="btn btn-ghost" @click="loadAll">刷新数据</button></div></header>
+      <section v-if="tab==='dashboard'">
+        <div class="welcome"><div><div class="eyebrow">YOUR FAMILY TV</div><h2>打开电视，就是熟悉的频道。</h2><p>整理家里的直播源和频道，让父母少按几次遥控器。</p></div><button class="btn btn-primary" @click="navigate('sources')">＋ 导入直播源</button></div>
         <div class="stats">
-          <div class="stat"><div class="num">{{ channels.length }}</div><div class="label">频道总数</div></div>
-          <div class="stat"><div class="num">{{ groups.length }}</div><div class="label">分组数</div></div>
-          <div class="stat"><div class="num">{{ sources.length }}</div><div class="label">直播源</div></div>
-          <div class="stat"><div class="num">{{ epgs.length }}</div><div class="label">EPG 源</div></div>
-          <div class="stat"><div class="num">{{ enabledCount }}</div><div class="label">启用频道</div></div>
+          <div class="stat"><span class="stat-icon">▤</span><div class="label">频道库</div><div class="num">{{ channels.length }}</div><div class="stat-foot">{{ enabledCount }} 个启用 · {{ groups.length }} 个分组</div></div>
+          <div class="stat"><span class="stat-icon">⌁</span><div class="label">直播源</div><div class="num">{{ sources.length }}</div><div class="stat-foot">{{ sources.filter(s=>s.status==='error').length }} 个同步异常</div></div>
+          <div class="stat"><span class="stat-icon">▣</span><div class="label">家庭设备</div><div class="num">{{ devices.length + unauthorized.length }}</div><div class="stat-foot">{{ clientCfg.needauthor==='1' ? unauthorized.length+' 台等待授权' : '家庭模式 · 无需授权' }}</div></div>
+          <div class="stat"><span class="stat-icon">◷</span><div class="label">节目单源</div><div class="num">{{ epgs.length }}</div><div class="stat-foot">XMLTV 节目预告</div></div>
         </div>
-        <div class="card">
-          <h3>分组统计</h3>
-          <div v-if="groups.length">
-            <span class="group-pill" v-for="g in groups" :key="g.group_name">{{ g.group_name }} ({{ g.count }})</span>
-          </div>
-          <div class="empty" v-else>暂无数据</div>
-        </div>
-      </div>
+        <div class="dashboard-grid"><div>
+          <div class="card"><div class="section-heading"><h3>常用操作</h3><span class="eyebrow">QUICK ACTIONS</span></div><div class="quick-grid"><button class="quick-action" @click="navigate('channels')"><strong>管理频道 →</strong><span>分组、搜索与上下架</span></button><button class="quick-action" @click="navigate('devices')"><strong>家庭设备 →</strong><span>查看手机与电视盒子</span></button><button class="quick-action" @click="navigate('client')"><strong>连接客户端 →</strong><span>服务器与 APK 下载地址</span></button></div></div>
+          <div class="card"><div class="section-heading"><h3>频道分布</h3><button class="text-button" @click="navigate('channels')">全部频道 →</button></div><div v-for="g in groups.slice(0,8)" class="group-meter"><span>{{ g.group_name }}</span><div class="meter-track"><i :style="{width:Math.max(3,g.count/Math.max(channels.length,1)*100)+'%'}"></i></div><b>{{ g.count }}</b></div><div class="overview-empty" v-if="!groups.length">频道库还是空的。导入 M3U / TXT 直播源后，这里会显示频道分组。</div></div>
+          <div class="card"><div class="section-heading"><h3>直播源状态</h3><button class="text-button" @click="navigate('sources')">管理直播源 →</button></div><div class="activity-row" v-for="s in sources.slice(0,5)"><span class="check-bullet" :class="{done:s.status==='ok'}">⌁</span><div class="grow"><strong>{{ s.name || '未命名源' }}</strong><small>{{ s.last_sync ? '最近同步 '+fmtTime(s.last_sync) : '尚未同步' }}</small></div><span class="tag" :class="s.status==='ok'?'tag-green':s.status==='error'?'tag-red':'tag-gray'">{{ s.status==='ok'?'已同步':s.status==='error'?'同步失败':'待同步' }}</span></div><div v-if="!sources.length" class="overview-empty">添加直播源，开始建立你的频道库。</div></div>
+        </div><div>
+          <div class="card"><div class="section-heading"><h3>部署检查清单</h3><span class="tag tag-gray">{{ setupSteps.filter(s=>s.done).length }} / 4</span></div><div class="check-row" v-for="(step,i) in setupSteps"><span class="check-bullet" :class="{done:step.done}">{{ step.done?'✓':i+1 }}</span><div class="grow"><strong>{{ step.title }}</strong><small>{{ step.hint }}</small></div><button class="text-button" @click="navigate(step.tab)">查看</button></div></div>
+          <div class="card"><div class="eyebrow">PHONE & TV</div><h3>一个 APK，连接两种屏幕</h3><p class="wizard-note">安卓手机使用触屏；Android TV 使用遥控器。先确认服务器地址可访问，再下载安装包。</p><button class="btn btn-primary" @click="navigate('client')">配置客户端 →</button></div>
+        </div></div>
+      </section>
 
       <!-- 频道管理 -->
       <div v-if="tab==='channels'">
@@ -214,6 +92,7 @@ pre.code { background: var(--bg2); padding: 16px; border-radius: 8px; font-size:
                 <td style="max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text2)">{{ ch.url }}</td>
                 <td><span class="tag" :class="ch.enabled ? 'tag-green' : 'tag-red'">{{ ch.enabled ? '启用' : '停用' }}</span></td>
                 <td>
+                  <button class="btn btn-blue btn-sm" @click="channelDraft={...ch}">编辑</button>
                   <button class="btn btn-ghost btn-sm" @click="toggleChannel(ch)">{{ ch.enabled ? '停用' : '启用' }}</button>
                   <button class="btn btn-danger btn-sm" @click="deleteChannel(ch)">删除</button>
                 </td>
@@ -228,7 +107,7 @@ pre.code { background: var(--bg2); padding: 16px; border-radius: 8px; font-size:
       <div v-if="tab==='sources'">
         <div class="page-header"><h2>直播源管理</h2><p>添加 M3U 源，一键同步合并去重</p></div>
         <div class="card">
-          <h3>新增直播源</h3>
+          <h3>添加家里的直播源</h3><p class="wizard-note">可以填写局域网订阅地址，也可以上传本地 M3U / TXT 文件。直播由手机或盒子直接连接源地址；使用局域网源时，请让设备连接家里的网络。</p>
           <div class="form-row">
             <input v-model="newSource.name" placeholder="源名称 (可选)">
             <input v-model="newSource.url" placeholder="M3U 地址 https://..." style="flex:2">
@@ -399,12 +278,12 @@ pre.code { background: var(--bg2); padding: 16px; border-radius: 8px; font-size:
 
       <!-- 设备授权 -->
       <div v-if="tab==='devices'">
-        <div class="page-header"><h2>设备授权</h2><p>客户端设备管理与授权</p></div>
+        <div class="page-header"><h2>家庭设备</h2><p>查看家人使用的手机与电视盒子</p></div>
         <div class="stats">
-          <div class="stat"><div class="num">{{ devices.length }}</div><div class="label">设备总数</div></div>
-          <div class="stat"><div class="num">{{ unauthorized.length }}</div><div class="label">待授权</div></div>
+          <div class="stat"><div class="num">{{ devices.length + unauthorized.length }}</div><div class="label">设备总数</div></div>
+          <div class="stat" v-if="clientCfg.needauthor==='1'"><div class="num">{{ unauthorized.length }}</div><div class="label">待授权</div></div>
         </div>
-        <div class="card">
+        <div class="card" v-if="clientCfg.needauthor!=='1'"><h3>家里的设备</h3><p class="wizard-note">当前是家庭模式，设备连接即可观看，无需选择套餐。这里显示曾连接过的手机和电视盒子。</p><table v-if="devices.length+unauthorized.length"><thead><tr><th>设备</th><th>型号</th><th>最近连接</th><th>IP 地址</th></tr></thead><tbody><tr v-for="d in [...devices,...unauthorized]" :key="d.id"><td>{{ d.name || d.device_id }}</td><td>{{ d.model }}</td><td>{{ d.last_time_str || '暂无记录' }}</td><td>{{ d.ip }}</td></tr></tbody></table><div class="empty" v-else>安装 APK 并连接服务器后，设备会出现在这里。</div></div><details><summary style="cursor:pointer;margin-bottom:16px">高级：套餐授权与设备记录</summary><div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
             <h3 style="margin:0">待授权列表</h3>
             <div class="search-bar" style="margin:0">
@@ -454,40 +333,15 @@ pre.code { background: var(--bg2); padding: 16px; border-radius: 8px; font-size:
           </table>
           <div class="empty" v-else>暂无已授权设备</div>
         </div>
+      </details>
       </div>
 
-      <!-- 客户端设置 -->
-      <div v-if="tab==='client'">
-        <div class="page-header"><h2>客户端设置</h2><p>设置 APK 默认连接、下载地址与授权策略</p></div>
-        <div class="card">
-          <h3>发布配置</h3>
-          <div class="form-row"><label>默认服务器：</label><input v-model="clientCfg.server_url" placeholder="https://iptv.example.com"></div>
-          <div class="form-row"><label>APK 下载地址：</label><input v-model="clientCfg.apk_url" placeholder="https://example.com/xibao-tv.apk"></div>
-          <div class="form-row">
-            <input v-model="clientCfg.packagename" placeholder="应用包名" style="flex:2">
-            <input v-model="clientCfg.appname" placeholder="应用名">
-            <input v-model="clientCfg.version" placeholder="版本号">
-          </div>
-        </div>
-        <div class="card">
-          <h3>应用默认设置</h3>
-          <div class="form-row">
-            <label>解码器：</label>
-            <select v-model="clientCfg.decoder"><option value="1">软解</option><option value="2">硬解</option><option value="3">自动</option></select>
-            <label>缓冲超时(秒)：</label>
-            <input v-model="clientCfg.bufftimeout" type="number">
-            <label>需要授权：</label>
-            <select v-model="clientCfg.needauthor"><option value="0">否</option><option value="1">是</option></select>
-          </div>
-        </div>
-        <div class="card">
-          <h3>应用提示文案</h3>
-          <div class="form-row"><input v-model="tips.loading" placeholder="加载提示"><input v-model="tips.user_expired" placeholder="过期提示"></div>
-          <div class="form-row"><input v-model="tips.user_forbidden" placeholder="禁用提示"><input v-model="tips.user_noreg" placeholder="未授权提示"></div>
-        </div>
-        <button class="btn btn-primary" @click="saveClientCfg">保存客户端配置</button>
-        <button class="btn" @click="buildApk">下载已发布 APK</button>
-      </div>
+      <section v-if="tab==='client'">
+        <div class="page-header"><h2>手机与电视</h2><p>由你配置一次，家人打开就能看。</p></div>
+        <div class="dashboard-grid"><div><div class="card"><h3>01 · 连接管理平台</h3><p class="wizard-note">在 APK 首次启动页输入下面的地址。局域网直播源需要手机和盒子连接家里的网络。换域名后，请同时修改已安装 APK 的服务器设置。</p><div class="form-row"><label>服务器地址</label><input v-model="clientCfg.server_url" :placeholder="currentOrigin"></div><button class="btn btn-ghost" @click="clientCfg.server_url=currentOrigin">使用当前访问地址</button></div>
+        <div class="card"><h3>02 · 安装到手机或盒子</h3><p class="wizard-note">Android 7.0 及以上。安卓手机、极光盒子、当贝盒子共用安装包；实际播放能力取决于设备和直播源。</p><div class="form-row"><label>APK 下载地址</label><input v-model="clientCfg.apk_url" placeholder="留空使用官方 2.1.0 安装包"></div><button class="btn btn-blue" @click="buildApk">下载安装包 ↗</button></div>
+        <button class="btn btn-primary" @click="saveClientCfg">保存配置</button></div><div><div class="card"><h3>给家人的操作说明</h3><div class="check-row"><span class="check-bullet done">1</span><div class="grow"><strong>打开就播放</strong><small>记住上次观看的频道</small></div></div><div class="check-row"><span class="check-bullet done">2</span><div class="grow"><strong>上下键换台</strong><small>确认键打开频道列表，返回键继续看</small></div></div><div class="check-row"><span class="check-bullet done">3</span><div class="grow"><strong>长按频道收藏</strong><small>常看频道集中在“我的收藏”</small></div></div></div><div class="card"><h3>设备访问方式</h3><p class="wizard-note">家庭使用建议关闭套餐授权，让家人连接后直接观看。公网访问时，可根据需要开启授权。</p><select v-model="clientCfg.needauthor"><option value="0">家庭模式 · 无需套餐授权</option><option value="1">授权模式 · 按设备和套餐放行</option></select></div></div></div>
+      </section>
 
       <!-- 系统公告 -->
       <div v-if="tab==='notice'">
@@ -510,7 +364,7 @@ pre.code { background: var(--bg2); padding: 16px; border-radius: 8px; font-size:
           <div class="form-row" style="align-items:center">
             <label>当前版本：</label>
             <input :value="updateInfo.version" readonly style="width:200px">
-            <span class="muted" v-if="!updateInfo.has_update">已是最新版本</span>
+            <span class="muted" v-if="!updateInfo.has_update">当前安装版本（未进行在线版本检查）</span>
             <span class="tag tag-green" v-else>发现新版本 {{ updateInfo.latest }}</span>
           </div>
           <div style="margin-top:16px">
@@ -577,10 +431,11 @@ pre.code { background: var(--bg2); padding: 16px; border-radius: 8px; font-size:
           </div>
         </div>
       </div>
-    </div>
+    </main>
   </div>
 
   <div style="text-align:center; padding:60px; color:var(--text2)" v-else>加载中...</div>
+  <div class="dialog-backdrop" v-if="channelDraft" @click.self="channelDraft=null"><form class="edit-dialog" @submit.prevent="saveChannelEdit" role="dialog" aria-modal="true" aria-labelledby="editTitle"><div class="section-heading"><h3 id="editTitle">整理频道</h3><button type="button" class="btn btn-ghost" @click="channelDraft=null">关闭</button></div><label>频道名称<input v-model="channelDraft.name" required></label><label>播放地址<input v-model="channelDraft.url" required></label><label>频道分组<input v-model="channelDraft.group_name" placeholder="例如：家人常看"></label><label>排列顺序<input v-model.number="channelDraft.sort_order" type="number" step="1"></label><p class="wizard-note">数字越小越靠前。新客户端会自动播放上次收看的频道；没有观看记录时播放第一个频道。</p><label>台标地址<input v-model="channelDraft.tvg_logo"></label><button class="btn btn-primary" type="submit">保存频道</button></form></div>
   <div class="toast" v-if="toast" :class="{error: toastError}">{{ toast }}</div>
 </div>
 
@@ -589,9 +444,15 @@ const { createApp } = Vue;
 createApp({
   data() {
     return {
-      authed: false,
+      authed: false, channelDraft:null,
       username: '',
-      tab: 'dashboard',
+      tab: 'dashboard', menuOpen:false,
+      navigation:[
+        {label:'工作空间',items:[{id:'dashboard',title:'总览',icon:'◫'}]},
+        {label:'内容管理',items:[{id:'sources',title:'直播源',icon:'⌁'},{id:'channels',title:'频道库',icon:'▤'},{id:'epg',title:'节目单 EPG',icon:'◷'},{id:'movies',title:'点播源（高级）',icon:'▷'}]},
+        {label:'家人使用',items:[{id:'client',title:'手机与电视',icon:'▣'},{id:'devices',title:'家庭设备',icon:'⌂'},{id:'m3u',title:'播放地址',icon:'⇩'}]},
+        {label:'更多设置',items:[{id:'meals',title:'频道套餐（高级）',icon:'▦'},{id:'notice',title:'公告',icon:'◉'},{id:'settings',title:'设置',icon:'⚙'},{id:'update',title:'版本信息',icon:'↻'}]}
+      ],
       channels: [], sources: [], groups: [], epgs: [],
       movies: [], meals: [], devices: [], unauthorized: [],
       newChannel: { name: '', url: '', group_name: '', tvg_logo: '' },
@@ -606,7 +467,7 @@ createApp({
       apkBuilding: false,
       apkDone: false,
       updateInfo: { version: '', latest: '', has_update: false },
-      changeLog: [],
+      changelog: [],
       cron: { channelAuto: false, channelInterval: 6, epgAuto: false },
       rssMeal: null, rssUrl: '',
       deviceSearch: '', checkAll: false, selectedDevices: [], batchMeal: '', batchDays: 30,
@@ -618,6 +479,13 @@ createApp({
     };
   },
   computed: {
+    currentOrigin(){return location.origin;},
+    pageTitle(){return this.navigation.flatMap(s=>s.items).find(i=>i.id===this.tab)?.title || '总览';},
+    setupSteps(){return [
+      {title:'导入直播源',hint:'M3U / TXT 文件或订阅地址',done:this.sources.length>0,tab:'sources'},
+      {title:'检查频道库',hint:'确认频道与分组已导入',done:this.channels.length>0,tab:'channels'},
+      {title:'连接节目单',hint:'配置 XMLTV 并同步',done:this.epgs.length>0,tab:'epg'},
+      {title:'发布客户端',hint:'设置服务器和安装包地址',done:!!(this.clientCfg.server_url&&this.clientCfg.apk_url),tab:'client'}];},
     enabledCount() { return this.channels.filter(c => c.enabled).length; },
     filteredChannels() {
       let l = this.channels;
@@ -635,6 +503,7 @@ createApp({
     },
   },
   async mounted() {
+    const initial=location.hash.slice(1);if(this.navigation.some(s=>s.items.some(i=>i.id===initial)))this.tab=initial;
     // 检查登录态
     try {
       const me = await fetch('/api/auth/me');
@@ -649,6 +518,8 @@ createApp({
     }
   },
   methods: {
+    async saveChannelEdit(){try{await this.api('/api/channels/'+this.channelDraft.id,{method:'PUT',body:JSON.stringify(this.channelDraft)});this.channelDraft=null;await this.loadAll();this.showToast('频道已保存');}catch(e){this.showToast(e.message,true);}},
+    navigate(id){this.tab=id;this.menuOpen=false;history.replaceState(null,'','#'+id);window.scrollTo(0,0);},
     async api(path, opts = {}) {
       const res = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...opts });
       if (res.status === 401) { window.location.href = '/login'; throw new Error('未登录'); }
@@ -824,8 +695,9 @@ createApp({
     },
     async buildApk() {
       try {
-        const result = await this.api('/api/client/build', { method: 'POST' });
-        window.open(result.url, '_blank', 'noopener');
+        const url=this.clientCfg.apk_url || 'https://github.com/billconan2017/xibao-iptv/releases/download/v2.1.0/xibao-tv-2.1.0.apk';
+        if(!/^https?:\/\//i.test(url))throw new Error('请填写完整的 HTTP 或 HTTPS 下载地址');
+        window.open(url, '_blank', 'noopener');
       } catch (e) { this.showToast(e.message, true); }
     },
     async saveNotice() {
@@ -854,7 +726,7 @@ createApp({
           cron_channel_interval: String(this.cron.channelInterval),
           cron_epg_auto: this.cron.epgAuto ? '1' : '0',
         }) });
-        this.showToast('已保存，下次启动后生效');
+        this.showToast('同步设置已保存并立即生效');
       } catch (e) { this.showToast(e.message, true); }
     },
     async deleteChannel(ch) {
@@ -903,7 +775,7 @@ createApp({
       const res = await fetch('/api/m3u.txt');
       this.m3uPreview = await res.text();
     },
-    copy(text) { navigator.clipboard.writeText(text).then(() => this.showToast('已复制')); },
+    async copy(text) { try { if(navigator.clipboard&&window.isSecureContext)await navigator.clipboard.writeText(text);else{const area=document.createElement('textarea');area.value=text;document.body.appendChild(area);area.select();const copied=document.execCommand('copy');area.remove();if(!copied)throw new Error('请手动选择地址复制');}this.showToast('已复制');}catch(e){this.showToast('无法自动复制，请手动选择地址',true);} },
     showToast(msg, isErr = false) { this.toast = msg; this.toastError = isErr; setTimeout(() => { this.toast = ''; }, 2500); },
     fmtTime(ts) { return new Date(ts * 1000).toLocaleString('zh-CN'); },
   },

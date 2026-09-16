@@ -80,11 +80,11 @@ body {
 .footer a { color: var(--accent2); text-decoration: none; }
 .footer .sep { margin: 0 8px; color: var(--border); }
 </style>
-</head>
+<link rel="stylesheet" href="/portal.css"></head>
 <body>
 <div id="app">
   <div class="topbar">
-    <div class="brand">📺 喜宝<span>IPTV</span></div>
+    <div class="brand">喜宝<span> TV</span></div>
     <nav>
       <a href="#features">功能介绍</a>
       <a href="/login">登录</a>
@@ -93,14 +93,14 @@ body {
   </div>
 
   <div class="hero">
-    <h1>📺 喜宝<span>IPTV</span></h1>
-    <p class="sub">{{ siteName }} — 自建 IPTV 管理平台，手机电视盒子通用</p>
+    <div class="portal-eyebrow">MADE FOR YOUR FAMILY</div><h1>打开，就看<span>电视。</span></h1>
+    <p class="sub">熟悉的频道，简单的遥控器。为你和家人准备的直播播放器。</p>
     <div class="dl-card">
-      <a class="dl-btn" :href="apkUrl" download>⬇️ 下载 APK</a>
+      <a class="dl-btn" :href="apkUrl" download>下载安卓安装包 ↗</a>
       <div class="steps">
         <div><span class="num">1</span>下载 APK 到手机 / 电视</div>
         <div><span class="num">2</span>安装后输入服务器地址</div>
-        <div><span class="num">3</span>选择频道，开始观看</div>
+        <div><span class="num">3</span>下次打开，继续收看上次频道</div>
       </div>
     </div>
   </div>
@@ -109,8 +109,8 @@ body {
     <div class="feat"><div class="ico">📡</div><h3>多源导入</h3><p>粘贴任意 M3U 直播源，一键合并去重，支持多源管理</p></div>
     <div class="feat"><div class="ico">🗂️</div><h3>频道管理</h3><p>分组、台标、启停、排序，全在网页后台操作</p></div>
     <div class="feat"><div class="ico">📅</div><h3>EPG 节目单</h3><p>XMLTV 源对接，自动匹配频道，显示实时节目预告</p></div>
-    <div class="feat"><div class="ico">🎬</div><h3>点播管理</h3><p>支持资源库接口接入，点播内容管理</p></div>
-    <div class="feat"><div class="ico">💳</div><h3>套餐授权</h3><p>套餐绑定频道分组，设备授权与到期管理</p></div>
+    <div class="feat"><div class="ico">♡</div><h3>家人常看</h3><p>收藏喜欢的频道，大字列表，减少寻找和操作</p></div>
+    <div class="feat"><div class="ico">↻</div><h3>自动重连</h3><p>断流后重试，有备用线路时自动尝试切换</p></div>
     <div class="feat"><div class="ico">🔒</div><h3>完全自建</h3><p>数据和播放不依赖第三方，服务器在你自己手里</p></div>
   </div>
 
@@ -140,7 +140,7 @@ createApp({
       }
     } catch (e) {}
     if (!this.apkUrl) {
-      this.apkUrl = 'https://github.com/billconan2017/xibao-iptv/releases/latest/download/xibao-tv-2.0.0.apk';
+      this.apkUrl = 'https://github.com/billconan2017/xibao-iptv/releases/download/v2.1.0/xibao-tv-2.1.0.apk';
     }
   },
 }).mount('#app');

@@ -49,15 +49,15 @@ body {
 }
 .hint-box b { color: var(--accent); }
 </style>
-</head>
+<link rel="stylesheet" href="/portal.css"></head>
 <body>
 <div id="app">
   <div class="login-wrap">
     <div class="logo">
-      <h1>📺 喜宝<span>IPTV</span></h1>
-      <p>自建 IPTV 管理门户</p>
+      <h1>喜宝<span> TV</span></h1>
+      <p>家里的电视，由你轻松打理</p>
     </div>
-    <div class="card">
+    <div class="card"><div class="login-welcome">欢迎回来<small>管理直播源、频道和家里的设备</small></div>
       <div class="field">
         <label>用户名</label>
         <input v-model="username" type="text" placeholder="admin" @keydown.enter="login">
@@ -67,7 +67,7 @@ body {
         <input v-model="password" type="password" placeholder="请输入密码" @keydown.enter="login">
       </div>
       <button class="btn" @click="login" :disabled="loading">
-        {{ loading ? '登录中...' : '进入后台' }}
+        {{ loading ? '登录中...' : '进入家庭管理' }}
       </button>
       <div class="err">{{ error }}</div>
     </div>

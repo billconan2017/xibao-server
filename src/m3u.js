@@ -77,6 +77,11 @@ export function parseTXT(text) {
     if (!line) continue;
 
     // 检测 #genre# 分组标记：#genre#名称# 或 #genre#名称
+    const standardGenre = line.match(/^(.+?)[,，]\s*#genre#\s*$/i);
+    if (standardGenre) {
+      currentGenre = standardGenre[1].trim();
+      continue;
+    }
     const genreMatch = line.match(/^#genre#\s*([^#,]+)/i);
     if (genreMatch) {
       currentGenre = genreMatch[1].trim();

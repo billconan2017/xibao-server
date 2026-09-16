@@ -175,7 +175,7 @@ function seedDefaults() {
     client_server_url: '',
     client_packagename: 'com.xibao.iptv',
     client_appname: '喜宝 TV',
-    client_version: '2.0.0',
+    client_version: '2.1.0',
     client_needauthor: '0',
     client_decoder: '3',
     client_bufftimeout: '10',
@@ -188,7 +188,7 @@ function seedDefaults() {
     ad_text: '',
     ad_showtime: '5',
     ad_showinterval: '30',
-    version: '2.0.0',
+    version: '2.1.0',
     // 定时任务
     cron_channel_auto: '0',
     cron_channel_interval: '6',
@@ -202,8 +202,9 @@ function seedDefaults() {
   // 仅升级旧版默认值，保留用户自行修改过的名称和版本配置。
   const upgradeDefault = db.prepare('UPDATE settings SET value=? WHERE key=? AND value=?');
   upgradeDefault.run('喜宝 TV', 'client_appname', '喜宝IPTV');
-  upgradeDefault.run('2.0.0', 'client_version', '1.0.1');
-  upgradeDefault.run('2.0.0', 'version', '1.1.0');
+  upgradeDefault.run('2.1.0', 'client_version', '1.0.1');
+  upgradeDefault.run('2.1.0', 'version', '1.1.0');
+  upgradeDefault.run('2.1.0', 'version', '2.0.0');
 }
 
 export function hashPassword(pwd) {
