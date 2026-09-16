@@ -95,8 +95,9 @@ export async function syncEpgInternal(db) {
       try {
         let cnt = 0;
         for (const p of programs) {
-          let chId = chMap.get(p.channel);
-          if (chId == null) chId = chMap.get(normalizeName(p.channel));
+          // 统一归一化后再匹配（buildChannelMatchMap 存的都是 normalizeName 后的 key）
+          const key = normalizeName(p.channel);
+          const chId = key ? chMap.get(key) : null;
           if (chId != null) {
             programInsert.run(epg.id, chId, p.title, p.start, p.stop, p.desc || '');
             cnt++;
@@ -225,22 +226,49 @@ function parseXmltvTime(t) {
   return Date.UTC(+y, +mo - 1, +d, +h, +mi, +s) / 1000 | 0;
 }
 
-// 构建频道匹配 Map（tvg-id + 频道名 + 归一化名）
+// 构建频道匹配 Map（tvg-id + 频道名 + 归一化名 + 短名别名）
 export function buildChannelMatchMap(channels) {
   const map = new Map();
   for (const c of channels) {
-    if (c.tvg_id) map.set(c.tvg_id, c.id);
-    if (c.name) map.set(c.name, c.id);
+    if (c.tvg_id) map.set(normalizeName(c.tvg_id), c.id);
+    if (c.name) map.set(normalizeName(c.name), c.id);
     const n = normalizeName(c.name);
     if (n) map.set(n, c.id);
+    // 短名别名：央视/卫视等前缀 + 去掉“综合/财经”等常见频道后缀
+    const short = shortAlias(c.name);
+    if (short) map.set(short, c.id);
   }
   return map;
 }
 
-// 频道名归一化：去空格/括号/特殊字符，统一小写
+// 频道名归一化：去空格/括号/特殊字符/无意义后缀，统一小写
+// 目标是让 XMLTV 的 channel（如 CCTV1 / cctv-1 / CCTV1HD）能匹配到频道名（如 CCTV-1 综合）
 export function normalizeName(name) {
   if (!name) return '';
-  return name.replace(/[\s-—–_·・'"'（）()\[\]【】]+/g, '').replace(/[高清超蓝]+/g, '').replace(/[频道台]+$/i, '').trim().toLowerCase();
+  return name
+    .replace(/[\s-—–_·・'"'（）()\[\]【】]+/g, '')
+    .replace(/(高清|超清|蓝光|超蓝|标清|流畅|HD|fullhd|FHD|1080p|720p|4K|8K|UHD)/gi, '')
+    .replace(/[频道台]+$/i, '')
+    .trim()
+    .toLowerCase();
+}
+
+// 生成短别名：识别“CCTV-1”“湖南卫视”“江苏卫视”这类带台号的频道，
+// 保留最核心的“CCTV1”“湖南卫视”，把“综合/财经/体育/健康”等频道属性后缀剥离
+function shortAlias(name) {
+  if (!name) return '';
+  let n = normalizeName(name);
+  if (!n) return '';
+  // 去掉常见频道属性后缀（中文）
+  n = n.replace(/(综合|财经|体育|健康|法制|新闻|曲艺|音乐|电影|电视剧|戏曲|纪录|少儿|生活|文化|军事|教育|农业|科技|公益|购物|宗教|民族)$/g, '');
+  // CCTV 系列：保留 cctv + 数字
+  const cctv = n.match(/^(cctv[\d\-].*)$/);
+  if (cctv) {
+    // 提取 cctv + 数字（可能带 th/5+ 等）
+    const num = n.match(/^cctv(\d+[\+]?)/);
+    if (num) return 'cctv' + num[1];
+  }
+  return n;
 }
 
 export default router;

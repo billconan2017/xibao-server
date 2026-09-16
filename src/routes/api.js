@@ -196,7 +196,7 @@ router.post('/sync', requireAuth, async (req, res) => {
     // 只清除 URL 源导入的频道（source_id 为 0 或对应 URL 源），保留上传导入的频道
     const clearCh = db.prepare('DELETE FROM channels WHERE source_id = 0 OR source_id NOT IN (SELECT id FROM sources WHERE type=\'upload\')');
     const insertCh = db.prepare(
-      `INSERT INTO channels (name, url, group_name, tvg_id, tvg_logo, tvg_name, source_id, sort_order)
+      `INSERT OR IGNORE INTO channels (name, url, group_name, tvg_id, tvg_logo, tvg_name, source_id, sort_order)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     );
 
