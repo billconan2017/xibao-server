@@ -141,17 +141,19 @@ router.get('/epg', (req, res) => {
   const { id, name } = req.query;
   if (!id && !name) return res.status(400).json({ code: 1, msg: '缺少 id 或 name' });
 
-  let channel;
-  if (id) channel = db.prepare('SELECT * FROM channels WHERE id=?').get(id);
-  else channel = db.prepare('SELECT * FROM channels WHERE name=? OR tvg_id=?').get(name, name);
+  const channels = id
+    ? db.prepare('SELECT * FROM channels WHERE id=?').all(id)
+    : db.prepare('SELECT * FROM channels WHERE name=? OR tvg_id=?').all(name, name);
 
-  if (!channel) return res.json({ code: 0, data: [] });
-
+  if (!channels.length) return res.json({ code: 0, data: [] });
+  const ids = [...new Set(channels.map(channel => channel.id))];
+  const placeholders = ids.map(() => '?').join(',');
   const programs = db.prepare(
-    'SELECT title, start_time, end_time, description FROM programs WHERE channel_id=? ORDER BY start_time LIMIT 50'
-  ).all(channel.id);
+    `SELECT title, start_time, end_time, description FROM programs
+     WHERE channel_id IN (${placeholders}) ORDER BY start_time LIMIT 50`
+  ).all(...ids);
 
-  res.json({ code: 0, data: { channel: channel.name, programs } });
+  res.json({ code: 0, data: { channel: channels[0].name, programs } });
 });
 
 // ============ 辅助：拉取 XMLTV & 解析 ============
@@ -217,13 +219,19 @@ export function parseXmltv(xml, maxPrograms = MAX_PROGRAMS) {
   return programs;
 }
 
-// XMLTV 时间 "20260114080000 +0800" → unix 秒
+// XMLTV 时间 "20260114080000 +0800" → unix 秒。
+// 时间主体表示来源时区的墙上时间，必须减去偏移量后才是 UTC。
 function parseXmltvTime(t) {
   if (!t) return 0;
-  const m = t.match(/(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/);
+  const m = t.match(/(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(?:\s*([+-])(\d{2})(\d{2}))?/);
   if (!m) return 0;
-  const [_, y, mo, d, h, mi, s] = m;
-  return Date.UTC(+y, +mo - 1, +d, +h, +mi, +s) / 1000 | 0;
+  const [, y, mo, d, h, mi, s, sign, offHour, offMinute] = m;
+  let timestamp = Date.UTC(+y, +mo - 1, +d, +h, +mi, +s) / 1000;
+  if (sign && offHour && offMinute) {
+    const offset = (+offHour * 60 + +offMinute) * 60;
+    timestamp -= sign === '+' ? offset : -offset;
+  }
+  return Math.trunc(timestamp);
 }
 
 // 构建频道匹配 Map（tvg-id + 频道名 + 归一化名 + 短名别名）

@@ -8,6 +8,21 @@ import crypto from 'crypto';
 const router = express.Router();
 const db = () => getDb();
 
+function parseMealGroups(meal, groupNames = []) {
+  if (!meal?.content) return [];
+  try {
+    const parsed = JSON.parse(meal.content);
+    if (Array.isArray(parsed)) return parsed.filter(name => groupNames.includes(name));
+  } catch {}
+  // 兼容旧版以分组下标保存的逗号字符串。
+  return meal.content.split(',').map(value => {
+    const item = value.trim();
+    if (groupNames.includes(item)) return item;
+    const index = Number(item);
+    return Number.isInteger(index) ? groupNames[index] : '';
+  }).filter(Boolean);
+}
+
 // ============ 点播管理 ============
 
 router.get('/movies', requireAuth, (req, res) => {
@@ -40,31 +55,30 @@ router.delete('/movies/:id', requireAuth, (req, res) => {
 
 router.get('/meals', requireAuth, (req, res) => {
   const meals = db().prepare('SELECT * FROM meals ORDER BY id').all();
-  // 统计每组频道数，拼接分类
-  const groups = db().prepare('SELECT group_name, COUNT(*) as c FROM channels GROUP BY group_name').all();
+  const groups = db().prepare('SELECT group_name, COUNT(*) as c FROM channels GROUP BY group_name ORDER BY group_name').all();
   const groupNames = groups.map(g => g.group_name);
   for (const m of meals) {
-    const cids = m.content ? m.content.split(',') : [];
-    m.ca_name = cids.map(c => groupNames[+c] || c).filter(Boolean).join(',');
+    m.groups = parseMealGroups(m, groupNames);
+    m.ca_name = m.groups.length ? m.groups.join('、') : '全部频道';
   }
   res.json({ code: 0, data: meals });
 });
 
 router.post('/meals', requireAuth, (req, res) => {
-  const { name, content } = req.body || {};
+  const { name, content, groups } = req.body || {};
   if (!name) return res.status(400).json({ code: 1, msg: '套餐名称必填' });
   const rssKey = crypto.randomBytes(8).toString('hex');
   const info = db().prepare('INSERT INTO meals (name, content, rss_key) VALUES (?, ?, ?)')
-    .run(name, content || '', rssKey);
+    .run(name, Array.isArray(groups) ? JSON.stringify(groups) : (content || ''), rssKey);
   res.json({ code: 0, data: { id: info.lastInsertRowid, rss_key: rssKey } });
 });
 
 router.put('/meals/:id', requireAuth, (req, res) => {
-  const { name, content, status } = req.body || {};
+  const { name, content, groups, status } = req.body || {};
   const cur = db().prepare('SELECT * FROM meals WHERE id=?').get(req.params.id);
   if (!cur) return res.status(404).json({ code: 1, msg: '不存在' });
   db().prepare('UPDATE meals SET name=?, content=?, status=? WHERE id=?')
-    .run(name ?? cur.name, content ?? cur.content, status ?? cur.status, req.params.id);
+    .run(name ?? cur.name, Array.isArray(groups) ? JSON.stringify(groups) : (content ?? cur.content), status ?? cur.status, req.params.id);
   res.json({ code: 0, msg: 'ok' });
 });
 
@@ -86,10 +100,9 @@ router.get('/rss/:key', (req, res) => {
   if (!meal) return res.status(404).json({ code: 1, msg: '订阅不存在' });
   // 按套餐内容过滤频道
   let channels = db().prepare('SELECT * FROM channels WHERE enabled=1').all();
-  if (meal.content) {
-    const groups = db().prepare('SELECT group_name, COUNT(*) as c FROM channels GROUP BY group_name').all();
-    const cids = meal.content.split(',');
-    const allowed = cids.map(c => groups[+c]?.group_name).filter(Boolean);
+  const groupNames = db().prepare('SELECT DISTINCT group_name FROM channels ORDER BY group_name').all().map(g => g.group_name);
+  const allowed = parseMealGroups(meal, groupNames);
+  if (allowed.length) {
     channels = channels.filter(c => allowed.includes(c.group_name));
   }
   const m3u = generateM3U(channels);
@@ -102,7 +115,10 @@ router.get('/rss/:key', (req, res) => {
 function deviceToShow(d) {
   const meal = d.meal_id ? db().prepare('SELECT name FROM meals WHERE id=?').get(d.meal_id) : null;
   let expDesc = '', expDays = '未授权';
-  if (d.exp_at) {
+  if (d.meal_id && !d.exp_at) {
+    expDesc = '永久';
+    expDays = '永久';
+  } else if (d.exp_at) {
     const days = Math.ceil((d.exp_at - Date.now() / 1000) / 86400);
     expDesc = new Date(d.exp_at * 1000).toLocaleDateString('zh-CN');
     expDays = days > 0 ? days + '天' : '已过期';
@@ -119,7 +135,7 @@ function deviceToShow(d) {
 // 设备列表（已授权）
 router.get('/devices', requireAuth, (req, res) => {
   const { keywords = '' } = req.query;
-  let sql = 'SELECT * FROM devices WHERE 1=1';
+  let sql = 'SELECT * FROM devices WHERE meal_id>0';
   let params = [];
   if (keywords) { sql += ' AND (name LIKE ? OR device_id LIKE ? OR model LIKE ?)'; params = [`%${keywords}%`, `%${keywords}%`, `%${keywords}%`]; }
   sql += ' ORDER BY last_time DESC';
@@ -129,7 +145,7 @@ router.get('/devices', requireAuth, (req, res) => {
 
 // 待授权列表（device 无 meal 或未绑定）
 router.get('/devices/unauthorized', requireAuth, (req, res) => {
-  const rows = db().prepare('SELECT * FROM devices WHERE meal_id=0 OR exp_at=0 ORDER BY created_at DESC').all().map(deviceToShow);
+  const rows = db().prepare('SELECT * FROM devices WHERE meal_id=0 ORDER BY created_at DESC').all().map(deviceToShow);
   res.json({ code: 0, data: rows });
 });
 
@@ -167,8 +183,9 @@ router.delete('/devices/:id', requireAuth, (req, res) => {
 
 // 设备上报心跳（公开，供 APK 连接）
 router.post('/device/heartbeat', (req, res) => {
-  const { name, device_id, model, ip, region } = req.body || {};
+  const { name, device_id, model, region } = req.body || {};
   if (!device_id) return res.status(400).json({ code: 1, msg: 'device_id 必填' });
+  const ip = req.ip || req.socket?.remoteAddress || '';
   const existing = db().prepare('SELECT * FROM devices WHERE device_id=?').get(device_id);
   const now = Date.now() / 1000 | 0;
   if (existing) {
@@ -180,8 +197,22 @@ router.post('/device/heartbeat', (req, res) => {
   }
   // 返回是否授权
   const d = db().prepare('SELECT * FROM devices WHERE device_id=?').get(device_id);
-  const authorized = d.meal_id > 0 && (d.exp_at === 0 || d.exp_at > now);
-  res.json({ code: 0, data: { authorized, exp_at: d.exp_at, meal_id: d.meal_id } });
+  const authorizationRequired = getSetting('client_needauthor', '0') === '1';
+  const authorized = !authorizationRequired || (d.meal_id > 0 && (d.exp_at === 0 || d.exp_at > now));
+  res.json({ code: 0, data: {
+    authorized,
+    authorization_required: authorizationRequired,
+    exp_at: d.exp_at,
+    meal_id: d.meal_id,
+    notice: getSetting('ad_text', ''),
+    tips: {
+      user_expired: getSetting('tip_userexpired', '订阅已过期'),
+      user_forbidden: getSetting('tip_userforbidden', '设备已被禁用'),
+      user_noreg: getSetting('tip_usernoreg', '设备未授权'),
+    },
+  } });
 });
+
+export { parseMealGroups };
 
 export default router;

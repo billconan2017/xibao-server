@@ -1,7 +1,7 @@
 {
   "name": "xibao-server",
-  "version": "1.0.0",
-  "description": "喜宝IPTV - 自建 IPTV 管理后端（多源导入合并 + 频道管理 + M3U/EPG 下发）",
+  "version": "2.0.0",
+  "description": "喜宝 IPTV 管理平台（直播源、EPG、套餐与设备授权）",
   "main": "src/server.js",
   "type": "module",
   "scripts": {

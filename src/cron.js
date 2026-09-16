@@ -1,7 +1,6 @@
 // 定时任务：定时同步频道 + 定时更新 EPG
 import { getDb, getSetting } from './store.js';
 import { syncAllSources } from './source.js';
-import { parseM3U, generateM3U, mergeChannels } from './m3u.js';
 import { syncEpgInternal } from './routes/epg.js';
 
 let channelTimer = null;
@@ -22,8 +21,31 @@ export function startChannelCron() {
   channelTimer = setInterval(async () => {
     console.log('[Cron] 开始定时同步频道...');
     try {
-      const result = await syncAllSources();
-      console.log(`[Cron] 频道同步完成: ${result.count} 个频道`);
+      const db = getDb();
+      const sources = db.prepare("SELECT * FROM sources WHERE enabled=1 AND type!='upload'").all();
+      const channels = await syncAllSources(sources);
+      const updateSource = db.prepare('UPDATE sources SET channel_count=?, status=?, last_sync=? WHERE id=?');
+      const clearChannels = db.prepare("DELETE FROM channels WHERE source_id = 0 OR source_id NOT IN (SELECT id FROM sources WHERE type='upload')");
+      const insertChannel = db.prepare(
+        `INSERT OR IGNORE INTO channels (name, url, group_name, tvg_id, tvg_logo, tvg_name, source_id, sort_order)
+         VALUES (?, ?, ?, ?, ?, ?, 0, ?)`
+      );
+
+      db.exec('BEGIN');
+      try {
+        for (const source of sources) {
+          updateSource.run(source.channel_count || 0, source.status || 'error', source.last_sync || 0, source.id);
+        }
+        clearChannels.run();
+        channels.forEach((channel, index) => {
+          insertChannel.run(channel.name, channel.url, channel.group_name, channel.tvg_id, channel.tvg_logo, channel.tvg_name, index);
+        });
+        db.exec('COMMIT');
+      } catch (error) {
+        db.exec('ROLLBACK');
+        throw error;
+      }
+      console.log(`[Cron] 频道同步完成: ${channels.length} 个频道`);
     } catch (e) {
       console.error('[Cron] 频道同步失败:', e.message);
     }

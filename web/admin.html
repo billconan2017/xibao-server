@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>管理后台 · 喜宝IPTV</title>
-<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script src="/vendor/vue.global.prod.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -103,6 +103,22 @@ tr:hover td { background: var(--bg2); }
 @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 pre.code { background: var(--bg2); padding: 16px; border-radius: 8px; font-size: 12px; overflow: auto; white-space: pre-wrap; }
 .muted { color: var(--text2); font-size: 13px; }
+@media (max-width: 760px) {
+  .layout { display: block; }
+  .sidebar { width: 100%; height: auto; position: sticky; z-index: 20; border-right: 0; border-bottom: 1px solid var(--border); }
+  .sidebar .brand { padding: 10px 14px; }
+  .side-nav { display: flex; padding: 0; overflow-x: auto; }
+  .nav-item { flex: 0 0 auto; padding: 10px 12px; border-left: 0; border-bottom: 3px solid transparent; }
+  .nav-item.active { border-left-color: transparent; border-bottom-color: var(--accent); }
+  .sidebar .foot { display: flex; justify-content: space-between; padding: 8px 14px; }
+  .sidebar .foot > div { margin-bottom: 0 !important; }
+  .main { padding: 14px 10px; }
+  .page-header { margin-bottom: 14px; }
+  .card { padding: 14px; overflow-x: auto; }
+  table { min-width: 760px; }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .toast { left: 12px; right: 12px; bottom: 12px; }
+}
 </style>
 </head>
 <body>
@@ -344,13 +360,19 @@ pre.code { background: var(--bg2); padding: 16px; border-radius: 8px; font-size:
         <div class="card">
           <h3>套餐列表</h3>
           <table v-if="meals.length">
-            <thead><tr><th>ID</th><th>名称</th><th>状态</th><th>收视内容</th><th style="width:260px">操作</th></tr></thead>
+            <thead><tr><th>ID</th><th>名称</th><th>状态</th><th>收视分组（不选表示全部）</th><th style="width:260px">操作</th></tr></thead>
             <tbody>
               <tr v-for="m in meals" :key="m.id">
                 <td>{{ m.id }}</td>
                 <td>{{ m.name }}</td>
                 <td><span class="tag" :class="m.status ? 'tag-green' : 'tag-red'">{{ m.status ? '上线' : '下线' }}</span></td>
-                <td style="color:var(--text2)">{{ m.ca_name || '全部频道' }}</td>
+                <td>
+                  <select v-model="mealGroups[m.id]" multiple size="4" style="min-width:220px">
+                    <option v-for="g in groups" :key="g.group_name" :value="g.group_name">{{ g.group_name }}（{{ g.count }}）</option>
+                  </select>
+                  <div style="margin-top:6px; color:var(--text2)">{{ m.ca_name || '全部频道' }}</div>
+                  <button class="btn btn-primary btn-sm" style="margin-top:6px" @click="saveMealGroups(m)">保存分组</button>
+                </td>
                 <td>
                   <button class="btn btn-ghost btn-sm" @click="toggleMeal(m)">{{ m.status ? '下线' : '上线' }}</button>
                   <button class="btn btn-blue btn-sm" @click="showRss(m)">订阅</button>
@@ -436,10 +458,11 @@ pre.code { background: var(--bg2); padding: 16px; border-radius: 8px; font-size:
 
       <!-- 客户端设置 -->
       <div v-if="tab==='client'">
-        <div class="page-header"><h2>客户端编译配置</h2><p>自定义 APK 连接信息与默认设置</p></div>
+        <div class="page-header"><h2>客户端设置</h2><p>设置 APK 默认连接、下载地址与授权策略</p></div>
         <div class="card">
-          <h3>编译配置</h3>
-          <div class="form-row"><label>APK 连接地址：</label><input v-model="clientCfg.server_url" placeholder="http://服务器地址"></div>
+          <h3>发布配置</h3>
+          <div class="form-row"><label>默认服务器：</label><input v-model="clientCfg.server_url" placeholder="https://iptv.example.com"></div>
+          <div class="form-row"><label>APK 下载地址：</label><input v-model="clientCfg.apk_url" placeholder="https://example.com/xibao-tv.apk"></div>
           <div class="form-row">
             <input v-model="clientCfg.packagename" placeholder="应用包名" style="flex:2">
             <input v-model="clientCfg.appname" placeholder="应用名">
@@ -463,8 +486,7 @@ pre.code { background: var(--bg2); padding: 16px; border-radius: 8px; font-size:
           <div class="form-row"><input v-model="tips.user_forbidden" placeholder="禁用提示"><input v-model="tips.user_noreg" placeholder="未授权提示"></div>
         </div>
         <button class="btn btn-primary" @click="saveClientCfg">保存客户端配置</button>
-        <button class="btn" @click="buildApk" :disabled="apkBuilding">{{ apkBuilding ? '编译中...' : '生成 APK' }}</button>
-        <span v-if="apkDone" class="status-success"> ✅ APK 已生成</span>
+        <button class="btn" @click="buildApk">下载已发布 APK</button>
       </div>
 
       <!-- 系统公告 -->
@@ -577,8 +599,8 @@ createApp({
       uploadFileName: '', uploadFileContent: '',
       newEpg: { name: '', url: '' },
       newMovie: { name: '', api: '' },
-      newMeal: { name: '' },
-      clientCfg: { server_url: '', packagename: 'com.xibao.iptv', appname: '喜宝IPTV', version: '1.0.1', needauthor: '0', decoder: '3', bufftimeout: '10' },
+      newMeal: { name: '' }, mealGroups: {},
+      clientCfg: { server_url: '', apk_url: '', packagename: 'com.xibao.iptv', appname: '喜宝 TV', version: '2.0.0', needauthor: '0', decoder: '3', bufftimeout: '10' },
       tips: { loading: '', user_expired: '', user_forbidden: '', user_noreg: '' },
       ad: { adtext: '', showtime: 5, showinterval: 30 },
       apkBuilding: false,
@@ -642,6 +664,7 @@ createApp({
         this.epgs = await this.api('/api/epgs') || [];
         this.movies = await this.api('/api/movies') || [];
         this.meals = await this.api('/api/meals') || [];
+        this.mealGroups = Object.fromEntries(this.meals.map(m => [m.id, [...(m.groups || [])]]));
         this.devices = await this.api('/api/devices') || [];
         this.unauthorized = await this.api('/api/devices/unauthorized') || [];
         const s = await this.api('/api/settings');
@@ -756,6 +779,12 @@ createApp({
       try { await this.api('/api/meals/' + m.id, { method: 'PUT', body: JSON.stringify({ status: m.status ? 0 : 1 }) }); await this.loadAll(); }
       catch (e) { this.showToast(e.message, true); }
     },
+    async saveMealGroups(m) {
+      try {
+        await this.api('/api/meals/' + m.id, { method: 'PUT', body: JSON.stringify({ groups: this.mealGroups[m.id] || [] }) });
+        await this.loadAll(); this.showToast('套餐分组已保存');
+      } catch (e) { this.showToast(e.message, true); }
+    },
     async deleteMeal(m) {
       if (!confirm(`删除套餐「${m.name}」？`)) return;
       try { await this.api('/api/meals/' + m.id, { method: 'DELETE' }); await this.loadAll(); }
@@ -794,28 +823,10 @@ createApp({
       } catch (e) { this.showToast(e.message, true); }
     },
     async buildApk() {
-      this.apkBuilding = true;
-      this.apkDone = false;
-      const url = this.clientCfg.server_url;
-      if (!url) { this.showToast('请先填写 APK 连接地址', true); this.apkBuilding = false; return; }
       try {
-        const resp = await fetch('/api/client/build', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ server_url: url })
-        });
-        if (!resp.ok) { const err = await resp.json(); throw new Error(err.msg || '编译失败'); }
-        // 下载 APK
-        const blob = await resp.blob();
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'xibao-iptv.apk';
-        a.click();
-        URL.revokeObjectURL(a.href);
-        this.apkDone = true;
-        this.showToast('APK 生成完成，已开始下载');
+        const result = await this.api('/api/client/build', { method: 'POST' });
+        window.open(result.url, '_blank', 'noopener');
       } catch (e) { this.showToast(e.message, true); }
-      this.apkBuilding = false;
     },
     async saveNotice() {
       try { await this.api('/api/notice', { method: 'POST', body: JSON.stringify(this.ad) }); this.showToast('公告已保存'); }

@@ -88,7 +88,13 @@ export function parseTXT(text) {
 
     // 解析频道行：支持 "名称,URL" 用逗号/空白分隔
     // 优先逗号，其次空白；名字在前，URL 在后（含 http/rtsp/udp 等协议）
-    const urlIdx = line.search(/https?:\/\//i) || line.search(/rtsp:\/\//i) || line.search(/rtmp:\/\//i) || line.search(/udp:\/\//i);
+    const protocolMatches = [
+      line.search(/https?:\/\//i),
+      line.search(/rtsp:\/\//i),
+      line.search(/rtmp:\/\//i),
+      line.search(/udp:\/\//i)
+    ].filter(index => index >= 0);
+    const urlIdx = protocolMatches.length ? Math.min(...protocolMatches) : -1;
     if (urlIdx < 0) continue;
 
     const url = line.slice(urlIdx).trim();

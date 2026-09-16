@@ -61,7 +61,7 @@ app.get('/admin', requireAuth, (req, res) => {
 });
 
 // 健康检查
-app.get('/health', (req, res) => res.json({ status: 'ok', name: 'xibao-server', version: '1.1.0' }));
+app.get('/health', (req, res) => res.json({ status: 'ok', name: 'xibao-server', version: '2.0.0' }));
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ 喜宝IPTV 后端已启动: http://0.0.0.0:${PORT}`);

@@ -174,8 +174,8 @@ function seedDefaults() {
     // 客户端编译配置
     client_server_url: '',
     client_packagename: 'com.xibao.iptv',
-    client_appname: '喜宝IPTV',
-    client_version: '1.0.1',
+    client_appname: '喜宝 TV',
+    client_version: '2.0.0',
     client_needauthor: '0',
     client_decoder: '3',
     client_bufftimeout: '10',
@@ -188,7 +188,7 @@ function seedDefaults() {
     ad_text: '',
     ad_showtime: '5',
     ad_showinterval: '30',
-    version: '1.1.0',
+    version: '2.0.0',
     // 定时任务
     cron_channel_auto: '0',
     cron_channel_interval: '6',
@@ -198,6 +198,12 @@ function seedDefaults() {
   for (const [k, v] of Object.entries(defaults)) {
     insert.run(k, v);
   }
+
+  // 仅升级旧版默认值，保留用户自行修改过的名称和版本配置。
+  const upgradeDefault = db.prepare('UPDATE settings SET value=? WHERE key=? AND value=?');
+  upgradeDefault.run('喜宝 TV', 'client_appname', '喜宝IPTV');
+  upgradeDefault.run('2.0.0', 'client_version', '1.0.1');
+  upgradeDefault.run('2.0.0', 'version', '1.1.0');
 }
 
 export function hashPassword(pwd) {
@@ -214,7 +220,7 @@ export function verifyPassword(pwd, stored) {
 
 export function createSession(userId, ttlSeconds = 7 * 24 * 3600) {
   const token = crypto.randomBytes(32).toString('hex');
-  const expires = Date.now() / 1000 | 0 + ttlSeconds;
+  const expires = Math.floor(Date.now() / 1000) + ttlSeconds;
   db.prepare('INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)').run(token, userId, expires);
   return { token, expires };
 }

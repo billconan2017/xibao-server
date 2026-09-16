@@ -4,6 +4,7 @@ import { getDb } from '../store.js';
 import { parseM3U, parsePlaylist, mergeChannels, generateM3U } from '../m3u.js';
 import { syncAllSources } from '../source.js';
 import { requireAuth } from '../auth.js';
+import { getSetting } from '../store.js';
 
 const router = express.Router();
 
@@ -218,7 +219,8 @@ router.post('/sync', requireAuth, async (req, res) => {
       name: s.name,
       status: s.status,
       count: s.channel_count || 0,
-      last_sync: s.last_sync
+      last_sync: s.last_sync,
+      message: s.error || ''
     }));
     const ok = urlSources.filter(s => s.status === 'ok').length;
     const fail = urlSources.filter(s => s.status === 'error').length;
@@ -276,9 +278,28 @@ router.get('/mytv/getUserM3U8', (req, res) => {
 // 频道 JSON（供新版 APK）
 router.get('/api/channels.json', (req, res) => {
   const db = getDb();
-  const channels = db.prepare(
+  let channels = db.prepare(
     'SELECT id, name, url, group_name, tvg_id, tvg_logo FROM channels WHERE enabled=1 ORDER BY sort_order, id'
   ).all();
+
+  if (getSetting('client_needauthor', '0') === '1') {
+    const deviceId = String(req.query.device_id || '');
+    const device = deviceId ? db.prepare('SELECT * FROM devices WHERE device_id=?').get(deviceId) : null;
+    const now = Date.now() / 1000 | 0;
+    if (!device || !device.meal_id || (device.exp_at > 0 && device.exp_at <= now)) {
+      return res.status(403).json({ code: 403, msg: '设备未授权或授权已过期' });
+    }
+    const meal = db.prepare('SELECT * FROM meals WHERE id=? AND status=1').get(device.meal_id);
+    if (!meal) return res.status(403).json({ code: 403, msg: '套餐不可用' });
+    if (meal.content) {
+      let allowed = [];
+      try { allowed = JSON.parse(meal.content); } catch {
+        const names = db.prepare('SELECT DISTINCT group_name FROM channels ORDER BY group_name').all().map(g => g.group_name);
+        allowed = meal.content.split(',').map(v => names[Number(v)] || v).filter(Boolean);
+      }
+      if (Array.isArray(allowed) && allowed.length) channels = channels.filter(c => allowed.includes(c.group_name));
+    }
+  }
   res.json({ code: 0, data: channels });
 });
 

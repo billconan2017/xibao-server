@@ -1,9 +1,7 @@
 // 客户端编译配置、系统公告、系统更新、升级日志
 import express from 'express';
-import { getDb, getSetting, setSetting } from '../store.js';
+import { getSetting, setSetting } from '../store.js';
 import { requireAuth } from '../auth.js';
-import { execSync } from 'child_process';
-import fs from 'fs';
 const router = express.Router();
 
 // ============ 客户端编译配置 ============
@@ -14,9 +12,10 @@ router.get('/client/config', requireAuth, (req, res) => {
     code: 0,
     data: {
       server_url: getSetting('client_server_url', ''),
+      apk_url: getSetting('apk_url', ''),
       packagename: getSetting('client_packagename', 'com.xibao.iptv'),
-      appname: getSetting('client_appname', '喜宝IPTV'),
-      version: getSetting('client_version', '1.0.1'),
+      appname: getSetting('client_appname', '喜宝 TV'),
+      version: getSetting('client_version', '2.0.0'),
       needauthor: getSetting('client_needauthor', '0'),
       decoder: getSetting('client_decoder', '3'),
       bufftimeout: getSetting('client_bufftimeout', '10'),
@@ -26,9 +25,10 @@ router.get('/client/config', requireAuth, (req, res) => {
 
 // 客户端编译配置
 router.post('/client/config', requireAuth, (req, res) => {
-  const keys = ['server_url', 'packagename', 'appname', 'version', 'needauthor', 'decoder', 'bufftimeout'];
+  const keys = ['server_url', 'apk_url', 'packagename', 'appname', 'version', 'needauthor', 'decoder', 'bufftimeout'];
   const map = {
     server_url: 'client_server_url',
+    apk_url: 'apk_url',
     packagename: 'client_packagename',
     appname: 'client_appname',
     version: 'client_version',
@@ -42,44 +42,11 @@ router.post('/client/config', requireAuth, (req, res) => {
   res.json({ code: 0, msg: '已保存' });
 });
 
-// 构建 APK：用当前 server_url 现场编译
+// 返回已发布 APK。Android SDK 构建放在 CI/专用镜像中，避免拖死 NAS 管理服务。
 router.post('/client/build', requireAuth, (req, res) => {
-  const serverUrl = req.body?.server_url || getSetting('client_server_url', '');
-  if (!serverUrl) return res.status(400).json({ code: 1, msg: '请先在编译配置中填写服务器地址' });
-
-  const APK_DIR = '/home/bill/.openclaw/workspace/iptv/iptv-app';
-  const OUT_APK = '/tmp/xibao-iptv.apk';
-  
-  // 用子进程同步执行构建
-  try {
-    // 1. 用 server_url 编译前端
-    execSync(
-      `VITE_SERVER_URL="${serverUrl}" npx vite build`,
-      { cwd: APK_DIR, stdio: 'pipe', timeout: 60000, env: { ...process.env, PATH: process.env.PATH } }
-    );
-    // 2. sync 到电容
-    execSync(
-      `npx cap sync android`,
-      { cwd: APK_DIR, stdio: 'pipe', timeout: 30000, env: { ...process.env, PATH: process.env.PATH } }
-    );
-    // 3. gradle 打包（静默，只取关键输出）
-    execSync(
-      `cd android && ANDROID_HOME=/opt/android-sdk ./gradlew assembleDebug --quiet`,
-      { cwd: APK_DIR, stdio: 'pipe', timeout: 300000, env: { ...process.env, ANDROID_HOME: '/opt/android-sdk', PATH: process.env.PATH } }
-    );
-    
-    // 4. 复制到输出路径
-    execSync(`cp ${APK_DIR}/android/app/build/outputs/apk/debug/app-debug.apk ${OUT_APK}`);
-    
-    // 5. 返回文件下载
-    const stat = fs.statSync(OUT_APK);
-    res.setHeader('Content-Type', 'application/vnd.android.package-archive');
-    res.setHeader('Content-Disposition', 'attachment; filename="xibao-iptv.apk"');
-    res.setHeader('Content-Length', stat.size);
-    fs.createReadStream(OUT_APK).pipe(res);
-  } catch (e) {
-    res.status(500).json({ code: 1, msg: `构建失败: ${e.stderr?.toString().slice(0, 200) || e.message}` });
-  }
+  const url = getSetting('apk_url', '');
+  if (!url) return res.status(400).json({ code: 1, msg: '请先填写已发布 APK 的下载地址' });
+  res.json({ code: 0, data: { url } });
 });
 
 // 保存应用提示文案
@@ -102,8 +69,8 @@ router.get('/client/config/public', (req, res) => {
     code: 0,
     data: {
       server_url: getSetting('client_server_url', ''),
-      appname: getSetting('client_appname', '喜宝IPTV'),
-      version: getSetting('client_version', '1.0.1'),
+      appname: getSetting('client_appname', '喜宝 TV'),
+      version: getSetting('client_version', '2.0.0'),
       needauthor: getSetting('client_needauthor', '0'),
       decoder: getSetting('client_decoder', '3'),
       bufftimeout: getSetting('client_bufftimeout', '10'),
@@ -149,8 +116,8 @@ router.get('/update', (req, res) => {
   res.json({
     code: 0,
     data: {
-      version: getSetting('version', '1.1.0'),
-      latest: getSetting('version', '1.1.0'),
+      version: getSetting('version', '2.0.0'),
+      latest: getSetting('version', '2.0.0'),
       has_update: false,
     },
   });
@@ -160,11 +127,12 @@ router.get('/update', (req, res) => {
 
 router.get('/about', (req, res) => {
   const changelog = [
+    { version: 'v2.0.0', date: '2026-09-16', desc: '原生 Android TV/手机客户端、设备授权与套餐频道下发' },
     { version: 'v1.1.0', date: '2026-09-16', desc: '综合门户：登录 + APK下载首页 + 后台多页 + EPG' },
     { version: 'v1.0.1', date: '2026-09-15', desc: 'APK 连自建后端' },
     { version: 'v1.0.0', date: '2026-09-14', desc: '首个版本' },
   ];
-  res.json({ code: 0, data: { changelog, version: getSetting('version', '1.1.0') } });
+  res.json({ code: 0, data: { changelog, version: getSetting('version', '2.0.0') } });
 });
 
 export default router;
