@@ -10,6 +10,7 @@ import settingsRouter from './routes/settings.js';
 import advancedRouter from './routes/advanced.js';
 import clientRouter from './routes/client.js';
 import { requireAuth } from './auth.js';
+import { restartAllCrons } from './cron.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 8080;
@@ -22,6 +23,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // 初始化数据库
 initDb();
+
+// 启动定时任务
+restartAllCrons();
 
 // 静态资源（管理后台前端页面）
 const webDir = path.join(__dirname, '..', 'web');

@@ -41,6 +41,10 @@ export function initDb() {
       last_sync INTEGER DEFAULT 0,
       channel_count INTEGER DEFAULT 0,
       status TEXT DEFAULT 'pending',
+      ua TEXT DEFAULT '',
+      auto_group INTEGER DEFAULT 0,
+      dedup INTEGER DEFAULT 0,
+      rename INTEGER DEFAULT 0,
       created_at INTEGER DEFAULT (strftime('%s','now')),
       UNIQUE(url)
     );
@@ -163,6 +167,10 @@ function seedDefaults() {
     ad_showtime: '5',
     ad_showinterval: '30',
     version: '1.1.0',
+    // 定时任务
+    cron_channel_auto: '0',
+    cron_channel_interval: '6',
+    cron_epg_auto: '0',
   };
   const insert = db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)');
   for (const [k, v] of Object.entries(defaults)) {

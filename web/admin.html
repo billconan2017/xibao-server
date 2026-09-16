@@ -156,6 +156,21 @@ pre.code { background: var(--bg2); padding: 16px; border-radius: 8px; font-size:
       <div v-if="tab==='channels'">
         <div class="page-header"><h2>频道管理</h2><p>增删改查、分组、台标、启停</p></div>
         <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
+            <h3 style="margin:0">频道同步设置</h3>
+          </div>
+          <div class="form-row" style="align-items:center">
+            <label>自动更新间隔：</label>
+            <input v-model.number="cron.channelInterval" type="number" style="width:80px"> 小时
+            <label class="lyear-checkbox" style="display:flex; align-items:center; gap:6px; margin-left:16px">
+              <input type="checkbox" v-model="cron.channelAuto">
+              <span>启用自动更新</span>
+            </label>
+            <button class="btn btn-ghost btn-sm" @click="saveCronSettings">保存设定</button>
+            <button class="btn btn-blue btn-sm" @click="syncAll" :disabled="syncing">{{ syncing ? '同步中...' : '更新全部' }}</button>
+          </div>
+        </div>
+        <div class="card">
           <h3>新增频道</h3>
           <div class="form-row">
             <input v-model="newChannel.name" placeholder="频道名称">
@@ -216,15 +231,21 @@ pre.code { background: var(--bg2); padding: 16px; border-radius: 8px; font-size:
             <h3 style="margin:0">源列表</h3>
             <button class="btn btn-green" @click="syncAll" :disabled="syncing">{{ syncing ? '同步中...' : '🔄 全量同步' }}</button>
           </div>
+          <div class="form-row muted" style="font-size:12px; margin-bottom:12px">
+            <label>自动分组</label><label>去重</label><label>重命名</label><label>自定义 UA</label>
+          </div>
           <table v-if="sources.length">
-            <thead><tr><th>名称</th><th>地址</th><th>频道数</th><th>状态</th><th>最近同步</th><th>操作</th></tr></thead>
+            <thead><tr><th>名称</th><th>地址</th><th>自动分组</th><th>去重</th><th>重命名</th><th>UA</th><th>频道数</th><th>状态</th><th>操作</th></tr></thead>
             <tbody>
               <tr v-for="s in sources" :key="s.id">
-                <td>{{ s.name }}</td>
-                <td style="max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text2)">{{ s.url }}</td>
+                <td><input v-model="s.name" @change="updateSource(s)" style="background:transparent; border:none; color:var(--text); width:80px; padding:4px"></td>
+                <td style="max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text2)">{{ s.url }}</td>
+                <td><input type="checkbox" :checked="s.auto_group" @change="toggleSourceFlag(s, 'auto_group')"></td>
+                <td><input type="checkbox" :checked="s.dedup" @change="toggleSourceFlag(s, 'dedup')"></td>
+                <td><input type="checkbox" :checked="s.rename" @change="toggleSourceFlag(s, 'rename')"></td>
+                <td style="max-width:120px"><input v-model="s.ua" @change="updateSource(s)" style="background:transparent; border:1px solid var(--border); color:var(--text2); font-size:12px; width:100%; padding:2px 4px; border-radius:4px"></td>
                 <td>{{ s.channel_count }}</td>
                 <td><span class="tag" :class="s.status==='ok' ? 'tag-green' : (s.status==='error' ? 'tag-red' : 'tag-gray')">{{ s.status || 'pending' }}</span></td>
-                <td>{{ s.last_sync ? fmtTime(s.last_sync) : '未同步' }}</td>
                 <td><button class="btn btn-danger btn-sm" @click="deleteSource(s)">删除</button></td>
               </tr>
             </tbody>
@@ -237,6 +258,16 @@ pre.code { background: var(--bg2); padding: 16px; border-radius: 8px; font-size:
       <div v-if="tab==='epg'">
         <div class="page-header"><h2>EPG 节目单</h2><p>添加 XMLTV 源，自动匹配频道显示节目预告</p></div>
         <div class="card">
+          <h3>EPG 定时更新</h3>
+          <div class="form-row" style="align-items:center">
+            <label class="lyear-checkbox" style="display:flex; align-items:center; gap:6px">
+              <input type="checkbox" v-model="cron.epgAuto">
+              <span>每天凌晨自动更新 EPG</span>
+            </label>
+            <button class="btn btn-ghost btn-sm" @click="saveCronSettings">保存</button>
+          </div>
+        </div>
+        <div class="card">
           <h3>新增 EPG 源</h3>
           <div class="form-row">
             <input v-model="newEpg.name" placeholder="源名称 (可选)">
@@ -247,7 +278,10 @@ pre.code { background: var(--bg2); padding: 16px; border-radius: 8px; font-size:
         <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
             <h3 style="margin:0">EPG 源列表</h3>
-            <button class="btn btn-green" @click="syncEpg" :disabled="epgSyncing">{{ epgSyncing ? '同步中...' : '🔄 同步 EPG' }}</button>
+            <div style="display:flex; gap:8px">
+              <button class="btn btn-ghost" @click="autoBindEpg">🔗 自动绑定频道</button>
+              <button class="btn btn-green" @click="syncEpg" :disabled="epgSyncing">{{ epgSyncing ? '同步中...' : '🔄 同步 EPG' }}</button>
+            </div>
           </div>
           <table v-if="epgs.length">
             <thead><tr><th>名称</th><th>地址</th><th>状态</th><th>最近同步</th><th>操作</th></tr></thead>
@@ -546,7 +580,8 @@ createApp({
       tips: { loading: '', user_expired: '', user_forbidden: '', user_noreg: '' },
       ad: { adtext: '', showtime: 5, showinterval: 30 },
       updateInfo: { version: '', latest: '', has_update: false },
-      changelog: [],
+      changeLog: [],
+      cron: { channelAuto: false, channelInterval: 6, epgAuto: false },
       rssMeal: null, rssUrl: '',
       deviceSearch: '', checkAll: false, selectedDevices: [], batchMeal: '', batchDays: 30,
       settings: { site_name: '喜宝IPTV', apk_url: '' },
@@ -609,6 +644,11 @@ createApp({
         if (s) this.settings = s;
         const me = await this.api('/api/auth/me');
         if (me) this.profile.username = me.username;
+        this.cron = {
+          channelAuto: (s.cron_channel_auto || '0') === '1',
+          channelInterval: parseInt(s.cron_channel_interval || '6', 10),
+          epgAuto: (s.cron_epg_auto || '0') === '1',
+        };
         const cc = await this.api('/api/client/config');
         if (cc) this.clientCfg = cc;
         const n = await this.api('/api/notice');
@@ -745,6 +785,31 @@ createApp({
     async saveNotice() {
       try { await this.api('/api/notice', { method: 'POST', body: JSON.stringify(this.ad) }); this.showToast('公告已保存'); }
       catch (e) { this.showToast(e.message, true); }
+    },
+    async updateSource(s) {
+      try { await this.api('/api/sources/' + s.id, { method: 'PUT', body: JSON.stringify({ name: s.name, ua: s.ua }) }); }
+      catch (e) { this.showToast(e.message, true); }
+    },
+    async toggleSourceFlag(s, key) {
+      try {
+        const val = s[key] ? 0 : 1;
+        await this.api('/api/sources/' + s.id, { method: 'PUT', body: JSON.stringify({ [key]: val }) });
+        s[key] = val;
+      } catch (e) { this.showToast(e.message, true); }
+    },
+    async autoBindEpg() {
+      try { const r = await this.api('/api/epgs/bind', { method: 'POST' }); this.showToast(`自动绑定完成: ${r.total} 频道`); }
+      catch (e) { this.showToast(e.message, true); }
+    },
+    async saveCronSettings() {
+      try {
+        await this.api('/api/settings', { method: 'POST', body: JSON.stringify({
+          cron_channel_auto: this.cron.channelAuto ? '1' : '0',
+          cron_channel_interval: String(this.cron.channelInterval),
+          cron_epg_auto: this.cron.epgAuto ? '1' : '0',
+        }) });
+        this.showToast('已保存，下次启动后生效');
+      } catch (e) { this.showToast(e.message, true); }
     },
     async deleteChannel(ch) {
       if (!confirm(`删除频道「${ch.name}」？`)) return;

@@ -141,6 +141,17 @@ router.post('/sources', requireAuth, (req, res) => {
   }
 });
 
+// 更新源
+router.put('/sources/:id', requireAuth, (req, res) => {
+  const db = getDb();
+  const { name, ua, auto_group, dedup, rename } = req.body || {};
+  const cur = db.prepare('SELECT * FROM sources WHERE id=?').get(req.params.id);
+  if (!cur) return res.status(404).json({ code: 1, msg: '不存在' });
+  db.prepare('UPDATE sources SET name=?, ua=?, auto_group=?, dedup=?, rename=? WHERE id=?')
+    .run(name ?? cur.name, ua ?? cur.ua, auto_group ?? cur.auto_group, dedup ?? cur.dedup, rename ?? cur.rename, req.params.id);
+  res.json({ code: 0, msg: 'ok' });
+});
+
 // 删除源
 router.delete('/sources/:id', requireAuth, (req, res) => {
   const db = getDb();
