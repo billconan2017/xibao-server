@@ -1,0 +1,16 @@
+{
+  "name": "xibao-server",
+  "version": "1.0.0",
+  "description": "喜宝IPTV - 自建 IPTV 管理后端（多源导入合并 + 频道管理 + M3U/EPG 下发）",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  },
+  "license": "MIT"
+}

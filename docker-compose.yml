@@ -1,0 +1,22 @@
+# 喜宝IPTV - 完整闭环部署
+# 后端(频道管理/多源导入) + 管理后台 + 频道下发
+services:
+  xibao-server:
+    build: .
+    image: billcoann/xibao-server:latest
+    container_name: xibao-server
+    restart: unless-stopped
+    ports:
+      - "8089:8080"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - TZ=Asia/Shanghai
+
+  # APK 下载站（可选，也可用 GitHub Release 直链）
+  xibao-apk:
+    image: billcoann/xibao-iptv:latest
+    container_name: xibao-apk
+    restart: unless-stopped
+    ports:
+      - "8088:80"
